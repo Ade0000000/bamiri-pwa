@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>バミリ計測メモ</title>
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="バミリ計測メモ">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="apple-touch-icon" href="./icons/icon-192.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+        header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .version-text {
+            font-size: 0.8rem;
+            font-weight: normal;
+            opacity: 0.8;
+            margin-left: 5px;
+        }
+        .header-reset-btn {
+            position: absolute;
+            right: 15px;
+            top: 12px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .container {
+            padding: 10px;
+            padding-bottom: 140px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #e1e4e8;
+            position: relative;
+            transition: background-color 0.3s;
+        }
+        .title-card { border: 2px solid #2980b9; background-color: #ebf5fb; }
+        .base-point-card { border: 2px solid #8e44ad; background-color: #fcf9ff; }
+
+        .storage-status-card { border: 2px solid #16a085; background-color: #eefaf7; }
+        .storage-status-card.warn { border-color: #f39c12; background-color: #fff8e8; }
+        .storage-status-card.error { border-color: #e74c3c; background-color: #fff0f0; }
+        .storage-status-card .card-header { border-bottom-color: #16a085; color: #16a085; }
+        .storage-status-card.warn .card-header { border-bottom-color: #f39c12; color: #f39c12; }
+        .storage-status-card.error .card-header { border-bottom-color: #e74c3c; color: #e74c3c; }
+        .status-text { font-size: 0.92rem; line-height: 1.5; white-space: pre-wrap; }
+        .card-header {
+            font-weight: bold;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .base-point-card .card-header { border-bottom-color: #8e44ad; color: #8e44ad; }
+        .title-card .card-header { border-bottom-color: #2980b9; color: #2980b9; }
+        .card.is-locked { background-color: #f0f0f0; border-color: #ccc; }
+
+        .bamiri-select-group { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .bamiri-select-group select, .bamiri-select-group input {
+            font-size: 1rem; font-weight: bold; color: #2c3e50;
+            border: 1px solid #ccc; border-radius: 4px; padding: 8px; width: 100%; box-sizing: border-box;
+        }
+        .header-actions { display: flex; flex-direction: column; gap: 5px; }
+        .delete-btn, .lock-btn {
+            color: white; border: none; border-radius: 4px; padding: 8px 12px; font-size: 0.85rem; cursor: pointer; white-space: nowrap;
+        }
+        .delete-btn { background-color: #e74c3c; }
+        .lock-btn { background-color: #95a5a6; }
+        .lock-btn.locked-state { background-color: #f39c12; }
+
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 0.85rem; color: #666; margin-bottom: 4px; font-weight: bold; }
+        .flex-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; width: 100%; }
+        .flex-row.header-row { margin-bottom: 0; }
+        input[type="text"], input[type="number"], select {
+            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; box-sizing: border-box; background-color: #fafafa;
+        }
+        input:disabled, select:disabled, button:disabled { background-color: #e9ecef; color: #6c757d; opacity: 1; -webkit-text-fill-color: #6c757d; }
+        .flex-row input, .flex-row select { flex: 1; }
+        .unit { font-size: 0.9rem; color: #555; white-space: nowrap; }
+
+        .camera-btn {
+            background-color: #2c3e50; color: white; border: none; border-radius: 4px; padding: 10px;
+            font-size: 1rem; font-weight: bold; width: 100%; cursor: pointer; display: flex; justify-content: center; gap: 5px;
+        }
+        .camera-btn.has-photo { background-color: #27ae60; }
+        .photo-preview {
+            width: 100%; max-height: 250px; object-fit: contain; border-radius: 8px; margin-top: 10px;
+            display: none; border: 1px solid #ddd; background-color: #000; cursor: pointer;
+        }
+        .photo-delete-btn {
+            background-color: transparent; color: #e74c3c; border: 1px solid #e74c3c; border-radius: 4px;
+            padding: 6px 10px; font-size: 0.85rem; font-weight: bold; cursor: pointer; margin-top: 8px; width: 100%;
+        }
+
+        .tab-container {
+            display: flex; overflow-x: auto; background-color: #e1e4e8; padding: 10px 10px 0;
+            border-radius: 8px 8px 0 0; margin-bottom: 15px; gap: 5px; -ms-overflow-style: none; scrollbar-width: none;
+        }
+        .tab-container::-webkit-scrollbar { display: none; }
+
+        .tab-btn {
+            padding: 12px 15px; background-color: #bdc3c7; color: #333; border-radius: 8px 8px 0 0;
+            font-weight: bold; font-size: 0.95rem; cursor: pointer; white-space: nowrap;
+            display: flex; align-items: center; gap: 8px; transition: background-color 0.2s;
+        }
+        .tab-btn.active { background-color: #3498db; color: white; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
+        .tab-edit-icon, .tab-delete-icon { font-size: 0.9rem; cursor: pointer; opacity: 0.7; }
+        .tab-btn.active .tab-edit-icon { opacity: 1; }
+        .tab-add-btn {
+            padding: 12px 15px; background-color: #27ae60; color: white; border-radius: 8px 8px 0 0;
+            font-weight: bold; font-size: 0.95rem; cursor: pointer; white-space: nowrap;
+        }
+
+        .button-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .add-btn { color: white; border: none; border-radius: 8px; padding: 15px; font-size: 1.1rem; font-weight: bold; width: 100%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; }
+        .btn-primary { background-color: #3498db; }
+        .btn-secondary { background-color: #e67e22; }
+
+        .floating-btn-container {
+            position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 8px; width: 96%; max-width: 600px; z-index: 100;
+        }
+        .floating-btn {
+            flex: 1; color: white; border: none; border-radius: 12px; padding: 12px 0;
+            font-size: 0.9rem; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.2); cursor: pointer; line-height: 1.3;
+        }
+        .zip-btn { background-color: #27ae60; }
+        .cad-btn { background-color: #8e44ad; } 
+        .pdf-btn { background-color: #c0392b; }
+
+        #loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); color: white; display: none; justify-content: center; align-items: center;
+            font-size: 1.2rem; font-weight: bold; z-index: 1000; text-align: center; padding: 20px;
+        }
+
+        .image-modal, .cad-modal {
+            display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.9); justify-content: center; align-items: center; flex-direction: column;
+        }
+        .cad-modal { background-color: rgba(0,0,0,0.6); }
+        .image-modal-content { max-width: 95%; max-height: 90%; border-radius: 4px; object-fit: contain; }
+        .image-modal-close { position: absolute; top: 15px; right: 25px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 2001; }
+
+        .cad-modal-box { background-color: #fff; padding: 20px; border-radius: 8px; width: 90%; max-width: 350px; }
+        .cad-modal-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #8e44ad; padding-bottom: 5px; color: #8e44ad; }
+        .cad-checkbox-group { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
+        .cad-checkbox-group label { display: flex; align-items: center; font-size: 1.1rem; font-weight: bold; cursor: pointer; color: #333; }
+        .cad-checkbox-group input[type="checkbox"] { width: 22px; height: 22px; margin-right: 10px; }
+        .cad-modal-buttons { display: flex; justify-content: flex-end; gap: 10px; }
+        .cad-btn-cancel { background-color: #95a5a6; color: white; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+        .cad-btn-exec { background-color: #8e44ad; color: white; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+
+        @media print {
+            @page { margin: 10mm; }
+            body { background-color: #fff !important; color: #000 !important; padding: 0 !important; font-size: 11pt; }
+            header, .button-group, .floating-btn-container, .header-actions, .camera-btn, .image-modal, .photo-delete-btn, .cad-modal, .tab-container {
+                display: none !important;
+            }
+            .card {
+                box-shadow: none !important; border: 1px solid #333 !important; border-radius: 0 !important;
+                margin-bottom: 10px !important; padding: 10px 15px !important; background-color: #fff !important;
+                page-break-inside: avoid !important; break-inside: avoid !important;
+            }
+            .card-header { border-bottom: 2px solid #333 !important; padding-bottom: 5px !important; margin-bottom: 8px !important; }
+            .base-point-card .card-header, .title-card .card-header { border-bottom-color: #333 !important; color: #333 !important; }
+            .base-point-card, .title-card { border-color: #333 !important; }
+            .bamiri-select-group { flex-direction: row !important; align-items: center; gap: 5px; }
+            .input-group { display: flex !important; flex-direction: row !important; align-items: flex-start !important; margin-bottom: 4px !important; }
+            .input-group label { width: 200px; min-width: 200px; margin-bottom: 0 !important; color: #000 !important; font-size: 10pt; padding-top: 2px; }
+            .flex-row { justify-content: flex-start !important; margin-bottom: 0 !important; gap: 5px !important; }
+            input, select {
+                flex: 0 0 auto !important; width: auto !important; min-width: 30px; border: none !important;
+                border-bottom: 1px dashed #666 !important; border-radius: 0 !important; background: transparent !important;
+                padding: 0 5px !important; text-align: center; appearance: none !important; -webkit-appearance: none !important;
+                font-weight: bold; color: #000 !important; font-size: 11pt;
+            }
+            .photo-preview { max-height: 120px !important; border: 1px solid #999 !important; background-color: transparent !important; margin-left: 200px !important; margin-top: 5px !important; cursor: default !important; }
+            ::-webkit-input-placeholder { color: transparent !important; }
+            select.is-empty-print { color: transparent !important; }
+            .print-text-wrap {
+                flex: 1; border-bottom: 1px dashed #666; word-break: break-all; white-space: pre-wrap;
+                padding: 2px 5px; font-weight: bold; color: #000; font-size: 11pt; min-height: 1.2em; text-align: left;
+            }
+            .print-tab-title {
+                font-size: 14pt; font-weight: bold; border-bottom: 2px solid #000; padding-bottom: 5px; margin: 20px 0 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    バミリ計測メモ<span class="version-text">v0.3.3 PWA</span>
+    <button class="header-reset-btn" onclick="resetData()">全消去</button>
+</header>
+
+<div class="container" id="main-content">
+    <div class="card title-card">
+        <div class="card-header"><span>📝 公演タイトル (共通)</span></div>
+        <div class="input-group">
+            <input type="text" id="event-title" placeholder="例: ○○ツアー2026 東京公演" onchange="saveData()">
+        </div>
+    </div>
+
+    <div class="card storage-status-card" id="storage-status-card">
+        <div class="card-header"><span>💾 写真保存の状態</span></div>
+        <div class="status-text" id="storage-status-text">確認中...</div>
+    </div>
+
+    <div id="tabs-container" class="tab-container"></div>
+
+    <div id="app"></div>
+
+    <div class="button-group">
+        <button class="add-btn btn-primary" onclick="addCard()">＋ 新しいバミリを追加</button>
+        <button class="add-btn btn-secondary" onclick="addSimilarCard()">＋ 同系統のバミリを追加 (連番)</button>
+    </div>
+</div>
+
+<div class="floating-btn-container">
+    <button class="floating-btn zip-btn" onclick="exportZIP()">📦 ZIP保存<br><span style="font-size:0.65rem;">(全タブ・写真あり)</span></button>
+    <button class="floating-btn cad-btn" onclick="openCADModal()">📐 CAD用<br><span style="font-size:0.65rem;">(全タブ・設定可)</span></button>
+    <button class="floating-btn pdf-btn" onclick="exportPDF()">📄 PDF<br><span style="font-size:0.65rem;">(全タブ一括印刷)</span></button>
+</div>
+
+<div id="loading-overlay">処理中...⏳<br>しばらくお待ちください</div>
+
+<div id="image-modal" class="image-modal" onclick="closeImageModal()">
+    <span class="image-modal-close">&times;</span>
+    <img class="image-modal-content" id="modal-img">
+</div>
+
+<div id="cad-modal" class="cad-modal">
+    <div class="cad-modal-box">
+        <div class="cad-modal-title">📐 CAD書き出し設定</div>
+        <p style="font-size:0.85rem; color:#555; margin-bottom:15px; line-height:1.4;">
+            図面上に座標と一緒に表示させるテキストを選んでください。
+        </p>
+        <div class="cad-checkbox-group">
+            <label><input type="checkbox" id="cad-chk-tab" checked> タブ名 (シーン名)</label>
+            <label><input type="checkbox" id="cad-chk-title"> 公演タイトル</label>
+            <label><input type="checkbox" id="cad-chk-id" checked> バミリID</label>
+            <label><input type="checkbox" id="cad-chk-name" checked> バミリ名称</label>
+            <label><input type="checkbox" id="cad-chk-note"> 備考（メモ）</label>
+        </div>
+        <div class="cad-modal-buttons">
+            <button class="cad-btn-cancel" onclick="closeCADModal()">キャンセル</button>
+            <button class="cad-btn-exec" onclick="executeCADExport()">書き出し実行</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const bamiriTypes = { 
+        "CM250": 12, "CM500": 12, "SL": 11,
+        "出演者": 100, "小道具": 100, "大道具": 100, 
+        "吊物": 100, "照明": 100, "音響": 100, "映像": 100, "その他": 100
+    };
+
+    const SAVE_KEY = 'bamiriAppSaveData_v023';
+    const PHOTO_KEY_PREFIX = 'bamiriPhoto_v028_';
+    const LEGACY_PHOTO_DB_KEYS = ['bamiriAppPhotosDB_v023', 'bamiriAppPhotosDB_v022', 'bamiriAppPhotosDB_v021'];
+    window.appPhotos = {};
+
+    let appData = {
+        eventTitle: "",
+        tabs: [
+            { id: generateId(), name: "シーン1", basePointDesc: "", cards: [] }
+        ],
+        activeTabId: null
+    };
+    let storagePersistenceGranted = null;
+    let photoStoreHealth = null;
+
+    function generateId() {
+        return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    function sanitizeFileName(name) {
+        if (!name) return "";
+        return String(name)
+            .replace(/[\\/:*?"<>|]/g, '_')
+            .replace(/[\x00-\x1F\x7F]/g, '')
+            .trim();
+    }
+
+    function sanitizeCADText(value) {
+        return String(value ?? '')
+            .replace(/[\r\n\t]+/g, ' ')
+            .replace(/'/g, '')
+            .replace(/[\x00-\x1F\x7F]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function escapeCSV(val) {
+        if (!val && val !== 0) return "";
+        let str = String(val).replace(/[\r\n]+/g, ' ');
+        if (/^[=+\-@]/.test(str)) str = "'" + str;
+        return `"${str.replace(/"/g, '""')}"`;
+    }
+
+    function openImageModal(imgSrc) {
+        document.getElementById('modal-img').src = imgSrc;
+        document.getElementById('image-modal').style.display = 'flex';
+    }
+    function closeImageModal() {
+        document.getElementById('image-modal').style.display = 'none';
+        document.getElementById('modal-img').src = '';
+    }
+    function openCADModal() { document.getElementById('cad-modal').style.display = 'flex'; }
+    function closeCADModal() { document.getElementById('cad-modal').style.display = 'none'; }
+
+    function getFileNamePrefix() {
+        const title = sanitizeFileName(appData.eventTitle || 'バミリ計測メモ');
+        return title || 'バミリ計測メモ';
+    }
+
+    function isDirectLocalOpen() {
+        return location.protocol === 'file:' || location.protocol === 'content:';
+    }
+
+    function getPhotoStorageKey(id) {
+        return `${PHOTO_KEY_PREFIX}${id}`;
+    }
+
+    function collectPhotoIds(data = appData) {
+        const ids = [];
+        if (!data || !Array.isArray(data.tabs)) return ids;
+        data.tabs.forEach(tab => {
+            ids.push(`base-${tab.id}`);
+            (tab.cards || []).forEach(card => ids.push(card.id));
+        });
+        return ids;
+    }
+
+    async function loadPhotoFromStore(id) {
+        if (window.appPhotos[id]) return window.appPhotos[id];
+        if (typeof localforage === 'undefined') return null;
+        try {
+            const data = await localforage.getItem(getPhotoStorageKey(id));
+            if (typeof data === 'string' && data) {
+                window.appPhotos[id] = data;
+                return data;
+            }
+        } catch (e) {
+            console.error('写真読込失敗:', e);
+        }
+        return null;
+    }
+
+    async function savePhotoToStore(id, base64Data) {
+        window.appPhotos[id] = base64Data;
+        if (typeof localforage === 'undefined') return false;
+        try {
+            await localforage.setItem(getPhotoStorageKey(id), base64Data);
+            return true;
+        } catch (e) {
+            console.error('写真保存失敗:', e);
+            return false;
+        }
+    }
+
+    async function removePhotoFromStore(id) {
+        delete window.appPhotos[id];
+        if (typeof localforage === 'undefined') return;
+        try {
+            await localforage.removeItem(getPhotoStorageKey(id));
+        } catch (e) {
+            console.error('写真削除失敗:', e);
+        }
+    }
+
+    async function preloadAllPhotos() {
+        const ids = collectPhotoIds(appData);
+        for (const id of ids) {
+            await loadPhotoFromStore(id);
+        }
+    }
+
+    function countLoadedPhotos() {
+        return Object.keys(window.appPhotos).filter(id => !!window.appPhotos[id]).length;
+    }
+
+    async function checkPhotoStoreHealth() {
+        if (typeof localforage === 'undefined') {
+            photoStoreHealth = false;
+            return false;
+        }
+        const probeKey = `${PHOTO_KEY_PREFIX}__probe__`;
+        try {
+            await localforage.setItem(probeKey, 'ok');
+            const result = await localforage.getItem(probeKey);
+            await localforage.removeItem(probeKey);
+            photoStoreHealth = result === 'ok';
+            return photoStoreHealth;
+        } catch (e) {
+            console.error('写真保存領域確認失敗:', e);
+            photoStoreHealth = false;
+            return false;
+        }
+    }
+
+    async function requestPersistentStorage() {
+        if (!navigator.storage || !navigator.storage.persist) {
+            storagePersistenceGranted = null;
+            return null;
+        }
+        try {
+            storagePersistenceGranted = await navigator.storage.persist();
+            return storagePersistenceGranted;
+        } catch (e) {
+            console.error('永続保存要求失敗:', e);
+            storagePersistenceGranted = null;
+            return null;
+        }
+    }
+
+    function updateStorageStatus(extraMessage = '') {
+        const card = document.getElementById('storage-status-card');
+        const text = document.getElementById('storage-status-text');
+        if (!card || !text) return;
+
+        card.classList.remove('warn', 'error');
+
+        const messages = [];
+        let level = 'ok';
+
+        if (extraMessage) messages.push(extraMessage);
+
+        if (isDirectLocalOpen()) {
+            messages.push('このHTMLを端末内から直接開いています。写真保存は不安定な場合がありますが、写真撮影自体は続けて試せます。');
+            level = 'warn';
+        } else {
+            messages.push('HTTPSで開いていればホーム画面追加やオフライン起動が使いやすくなります。');
+        }
+
+        const photoCount = countLoadedPhotos();
+        messages.push(`現在の写真: ${photoCount}枚`);
+
+        if (photoStoreHealth === true) {
+            messages.push('写真保存領域: 利用可能');
+        } else if (photoStoreHealth === false) {
+            messages.push('写真保存領域: 利用できません');
+            level = 'error';
+        } else {
+            messages.push('写真保存領域: 未確認');
+            if (level !== 'error') level = 'warn';
+        }
+
+        if (storagePersistenceGranted === true) {
+            messages.push('保存保持: 要求済み');
+        } else if (storagePersistenceGranted === false) {
+            messages.push('保存保持: 未許可');
+            if (level === 'ok') level = 'warn';
+        } else {
+            messages.push('保存保持: ブラウザ依存');
+        }
+
+        if (level === 'warn') card.classList.add('warn');
+        if (level === 'error') card.classList.add('error');
+
+        text.textContent = messages.join('\n');
+    }
+
+    async function migrateLegacyPhotosIfNeeded() {
+        if (typeof localforage === 'undefined') return;
+
+        let legacyPhotos = null;
+        for (const key of LEGACY_PHOTO_DB_KEYS) {
+            try {
+                const candidate = await localforage.getItem(key);
+                if (candidate && typeof candidate === 'object') {
+                    legacyPhotos = candidate;
+                    break;
+                }
+            } catch (e) {
+                console.error('旧写真読込失敗:', e);
+            }
+        }
+        if (!legacyPhotos) return;
+
+        const normalized = { ...legacyPhotos };
+        if (normalized['base'] && appData.tabs[0] && !normalized[`base-${appData.tabs[0].id}`]) {
+            normalized[`base-${appData.tabs[0].id}`] = normalized['base'];
+        }
+        delete normalized['base'];
+
+        let migratedCount = 0;
+        for (const [id, data] of Object.entries(normalized)) {
+            if (typeof data !== 'string' || !data.startsWith('data:image/')) continue;
+            const storageKey = getPhotoStorageKey(id);
+            const existing = await localforage.getItem(storageKey);
+            if (!existing) {
+                await localforage.setItem(storageKey, data);
+                migratedCount += 1;
+            }
+            window.appPhotos[id] = data;
+        }
+
+        if (migratedCount > 0) {
+            for (const key of LEGACY_PHOTO_DB_KEYS) {
+                try {
+                    await localforage.removeItem(key);
+                } catch (e) {
+                    console.error('旧写真削除失敗:', e);
+                }
+            }
+        }
+    }
+
+    function handleTypeChange(id) {
+        const typeSelect = document.getElementById(`typeSelect-${id}`);
+        const numSelect = document.getElementById(`numSelect-${id}`);
+        const customInput = document.getElementById(`bamiriCustom-${id}`);
+        if (!typeSelect || !numSelect || !customInput) return;
+
+        const selectedType = typeSelect.value;
+        if (selectedType === 'custom') {
+            numSelect.style.display = 'none';
+            numSelect.value = '';
+            customInput.style.display = 'block';
+        } else {
+            customInput.style.display = 'none';
+            if (selectedType && bamiriTypes[selectedType]) {
+                let numOptions = '<option value="">番号</option>';
+                for (let i = 1; i <= bamiriTypes[selectedType]; i++) {
+                    let nStr = String(i).padStart(2, '0');
+                    numOptions += `<option value="${nStr}">${nStr}</option>`;
+                }
+                numSelect.innerHTML = numOptions;
+                numSelect.style.display = 'block';
+            } else {
+                numSelect.innerHTML = '<option value="">番号</option>';
+                numSelect.style.display = 'block';
+            }
+            customInput.value = '';
+        }
+        saveData();
+    }
+
+    function toggleDistX(id) {
+        const dirXSel = document.getElementById(`dirX-${id}`);
+        const parts = document.querySelectorAll(`.dist-x-parts-${id}`);
+        if (!dirXSel) return;
+        const hide = dirXSel.value === 'センター';
+        parts.forEach(el => {
+            el.style.display = hide ? 'none' : (el.tagName === 'INPUT' ? 'block' : '');
+        });
+        if (hide) {
+            const distInput = document.getElementById(`distX-${id}`);
+            if (distInput) distInput.value = '';
+        }
+    }
+
+
+    function fileToDataURL(file) {
+        return new Promise((resolve, reject) => {
+            try {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(new Error('写真ファイルの読み込みに失敗しました。'));
+                reader.onabort = () => reject(new Error('写真ファイルの読み込みが中断されました。'));
+                reader.readAsDataURL(file);
+            } catch (e) {
+                reject(e);
+            }
+        });
+    }
+
+    function compressImage(file, maxWidth, maxHeight, quality, callback) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                let width = img.width;
+                let height = img.height;
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width = Math.round((width * maxHeight) / height);
+                        height = maxHeight;
+                    }
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                const base64Data = canvas.toDataURL('image/jpeg', quality);
+                callback(base64Data);
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function handlePhoto(event, id) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const cameraBtn = document.getElementById(`cameraBtn-${id}`);
+        const preview = document.getElementById(`preview-${id}`);
+        const delBtn = document.getElementById(`deletePhotoBtn-${id}`);
+
+        if (cameraBtn) cameraBtn.innerHTML = '⏳ 写真を処理中...';
+
+        try {
+            const rawData = await fileToDataURL(file);
+            if (preview) {
+                preview.src = rawData;
+                preview.style.display = 'block';
+            }
+            if (delBtn) delBtn.style.display = 'block';
+            if (cameraBtn) {
+                cameraBtn.classList.add('has-photo');
+                cameraBtn.innerHTML = '⏳ 保存中...';
+            }
+
+            const compressedData = await compressImage(file, 1200, 1200, 0.7);
+            let dataToStore = rawData;
+            if (compressedData && compressedData.length > 0 && compressedData.length < rawData.length) {
+                dataToStore = compressedData;
+            }
+
+            if (preview) {
+                preview.src = dataToStore;
+                preview.style.display = 'block';
+            }
+
+            const saved = await savePhotoToStore(id, dataToStore);
+
+            if (cameraBtn) {
+                cameraBtn.innerHTML = saved ? '✅ 写真撮影済み (タップで撮り直し)' : '⚠️ 一時表示中 (保存未完了)';
+            }
+
+            if (!saved) {
+                alert('写真の保存に失敗しました。\nこのまま画面には表示されますが、再読み込み前にZIP保存するか、撮り直してください。');
+            }
+
+            saveData();
+            updateStorageStatus(saved ? '写真を保存しました。' : '写真は画面表示のみで、保存が完了していません。');
+        } catch (error) {
+            console.error('写真処理失敗:', error);
+            if (cameraBtn) {
+                cameraBtn.classList.remove('has-photo');
+                cameraBtn.innerHTML = id.startsWith('base-') ? '📷 基準点の写真を選択/撮影' : '📷 記録写真を選択/撮影';
+            }
+            alert('写真の読み込みに失敗しました。\nこの端末の開き方ではカメラ連携が不安定な可能性があります。いったん写真アプリで撮ってから選択すると通る場合があります。');
+            updateStorageStatus('写真の読み込みに失敗しました。');
+        } finally {
+            if (event.target) event.target.value = '';
+        }
+    }
+
+
+    function syncDOMtoData() {
+        const eventTitleEl = document.getElementById('event-title');
+        if (eventTitleEl) appData.eventTitle = eventTitleEl.value;
+
+        const activeTab = appData.tabs.find(t => t.id === appData.activeTabId);
+        if (!activeTab) return;
+
+        const baseDescEl = document.getElementById(`base-point-desc-${activeTab.id}`);
+        if(baseDescEl) activeTab.basePointDesc = baseDescEl.value;
+
+        const cardEls = document.querySelectorAll('#app .card:not(.base-point-card)');
+        const updatedCards = [];
+        cardEls.forEach(el => {
+            const id = el.getAttribute('data-id');
+            const typeSel = document.getElementById(`typeSelect-${id}`);
+            const numSel = document.getElementById(`numSelect-${id}`);
+            const customInput = document.getElementById(`bamiriCustom-${id}`);
+            const nameInput = document.getElementById(`name-${id}`);
+            const dirXSel = document.getElementById(`dirX-${id}`);
+            const distXInput = document.getElementById(`distX-${id}`);
+            const dirYSel = document.getElementById(`dirY-${id}`);
+            const distYInput = document.getElementById(`distY-${id}`);
+            const noteInput = document.getElementById(`note-${id}`);
+
+            if(typeSel) {
+                updatedCards.push({
+                    id: id,
+                    typeVal: typeSel.value,
+                    numVal: numSel ? numSel.value : "",
+                    customVal: customInput ? customInput.value : "",
+                    name: nameInput ? nameInput.value : "",
+                    dirX: dirXSel ? dirXSel.value : "",
+                    distX: distXInput ? distXInput.value : "",
+                    dirY: dirYSel ? dirYSel.value : "",
+                    distY: distYInput ? distYInput.value : "",
+                    note: noteInput ? noteInput.value : "",
+                    isLocked: el.classList.contains('is-locked')
+                });
+            }
+        });
+        activeTab.cards = updatedCards;
+    }
+
+    function saveData() {
+        syncDOMtoData();
+        localStorage.setItem(SAVE_KEY, JSON.stringify(appData));
+    }
+
+    function resetData() {
+        if(confirm("すべてのタブ、データ、写真を消去して初期状態に戻しますか？\n※取り消せません。")) {
+            localStorage.removeItem(SAVE_KEY);
+            if (typeof localforage !== 'undefined') {
+                (async () => {
+                    for (const id of collectPhotoIds(appData)) {
+                        await removePhotoFromStore(id);
+                    }
+                    for (const key of LEGACY_PHOTO_DB_KEYS) {
+                        try {
+                            await localforage.removeItem(key);
+                        } catch (e) {
+                            console.error('旧写真削除失敗:', e);
+                        }
+                    }
+                    location.reload();
+                })();
+            } else {
+                location.reload();
+            }
+        }
+    }
+
+    async function loadData() {
+        let saved = localStorage.getItem(SAVE_KEY);
+
+        if (!saved) {
+            let oldSaved = localStorage.getItem('bamiriAppSaveData_v023') || localStorage.getItem('bamiriAppSaveData_v022') || localStorage.getItem('bamiriAppSaveData_v021');
+            if (oldSaved) {
+                try {
+                    let oldData = JSON.parse(oldSaved);
+                    appData.eventTitle = oldData.eventTitle || "";
+                    appData.tabs = Array.isArray(oldData.tabs) && oldData.tabs.length ? oldData.tabs : appData.tabs;
+
+                    if(oldData.basePointDesc && !appData.tabs[0].basePointDesc) {
+                        appData.tabs[0].basePointDesc = oldData.basePointDesc;
+                    }
+
+                    appData.activeTabId = appData.tabs[0].id;
+                } catch(e) {
+                    appData.activeTabId = appData.tabs[0].id;
+                    appData.tabs[0].cards.push(createEmptyCardData());
+                }
+            } else {
+                appData.activeTabId = appData.tabs[0].id;
+                appData.tabs[0].cards.push(createEmptyCardData());
+            }
+        } else {
+            appData = JSON.parse(saved);
+        }
+
+        document.getElementById('event-title').value = appData.eventTitle || '';
+
+        if(!appData.activeTabId && appData.tabs.length > 0) {
+            appData.activeTabId = appData.tabs[0].id;
+        }
+
+        if (typeof localforage !== 'undefined') {
+            try {
+                await migrateLegacyPhotosIfNeeded();
+                await preloadAllPhotos();
+                await checkPhotoStoreHealth();
+                await requestPersistentStorage();
+            } catch(e) {
+                console.error("写真復元エラー", e);
+                photoStoreHealth = false;
+            }
+        } else {
+            photoStoreHealth = false;
+        }
+
+        renderTabs();
+        renderCards();
+        updateStorageStatus();
+
+        if (location.protocol === 'file:' && !sessionStorage.getItem('bamiri_file_warning_shown')) {
+            sessionStorage.setItem('bamiri_file_warning_shown', '1');
+            alert('このHTMLをChromeで直接開いているため、写真保存は不安定です。\nChromeを完全に閉じると画像が消える場合があります。\n重要な写真は作業後すぐにZIP保存してください。');
+        }
+    }
+
+    function createEmptyCardData(prefillType = "", prefillNum = "") {
+        return {
+            id: generateId(),
+            typeVal: prefillType,
+            numVal: prefillNum,
+            customVal: "", name: "", dirX: "", distX: "", dirY: "奥", distY: "", note: "", isLocked: false
+        };
+    }
+
+    function renderTabs() {
+        const tc = document.getElementById('tabs-container');
+        tc.innerHTML = '';
+        appData.tabs.forEach(tab => {
+            const btn = document.createElement('div');
+            btn.className = `tab-btn ${tab.id === appData.activeTabId ? 'active' : ''}`;
+
+            const switchSpan = document.createElement('span');
+            switchSpan.style.marginRight = '8px';
+            switchSpan.textContent = tab.name;
+            switchSpan.onclick = () => switchTab(tab.id);
+            btn.appendChild(switchSpan);
+
+            const editSpan = document.createElement('span');
+            editSpan.className = 'tab-edit-icon';
+            editSpan.title = '名前変更';
+            editSpan.textContent = '✏️';
+            editSpan.onclick = (e) => { e.stopPropagation(); editTab(tab.id); };
+            btn.appendChild(editSpan);
+
+            if (appData.tabs.length > 1) {
+                const deleteSpan = document.createElement('span');
+                deleteSpan.className = 'tab-delete-icon';
+                deleteSpan.style.color = '#e74c3c';
+                deleteSpan.style.marginLeft = '5px';
+                deleteSpan.title = '削除';
+                deleteSpan.textContent = '✖';
+                deleteSpan.onclick = (e) => { e.stopPropagation(); deleteTab(tab.id); };
+                btn.appendChild(deleteSpan);
+            }
+
+            tc.appendChild(btn);
+        });
+        const addBtn = document.createElement('div');
+        addBtn.className = 'tab-add-btn';
+        addBtn.textContent = '＋ 追加';
+        addBtn.onclick = addTab;
+        tc.appendChild(addBtn);
+    }
+
+    function switchTab(tabId) {
+        if(appData.activeTabId === tabId) return;
+        syncDOMtoData(); 
+        appData.activeTabId = tabId;
+        renderTabs();
+        renderCards();
+        updateStorageStatus();
+    }
+
+    function addTab() {
+        syncDOMtoData();
+        const name = prompt("新しいタブの名前を入力してください", `シーン${appData.tabs.length + 1}`);
+        if (!name) return;
+        const newTab = { id: generateId(), name: name, basePointDesc: "", cards: [] };
+        appData.tabs.push(newTab);
+        appData.activeTabId = newTab.id;
+        renderTabs();
+        renderCards();
+        saveData();
+        updateStorageStatus();
+    }
+
+    function editTab(tabId) {
+        const tab = appData.tabs.find(t => t.id === tabId);
+        const newName = prompt("タブの名前を変更", tab.name);
+        if (newName && newName.trim() !== "") {
+            tab.name = newName.trim();
+            renderTabs();
+            saveData();
+        }
+    }
+
+    async function deleteTab(tabId) {
+        if (appData.tabs.length <= 1) return;
+        const tab = appData.tabs.find(t => t.id === tabId);
+        if (confirm(`タブ「${tab.name}」とその中のデータをすべて削除しますか？`)) {
+            await removePhotoFromStore(`base-${tabId}`);
+
+            for (const c of tab.cards) {
+                await removePhotoFromStore(c.id);
+            }
+
+            appData.tabs = appData.tabs.filter(t => t.id !== tabId);
+            if (appData.activeTabId === tabId) {
+                appData.activeTabId = appData.tabs[0].id; 
+            }
+            renderTabs();
+            renderCards();
+            saveData();
+            updateStorageStatus('タブと関連写真を削除しました。');
+        }
+    }
+
+    function renderCards() {
+        const appDiv = document.getElementById('app');
+        appDiv.innerHTML = '';
+        const activeTab = appData.tabs.find(t => t.id === appData.activeTabId);
+        if (!activeTab) return;
+
+        appDiv.appendChild(createBasePointElement(activeTab));
+
+        activeTab.cards.forEach(card => {
+            appDiv.appendChild(createCardElement(card));
+        });
+    }
+
+    function createBasePointElement(tab) {
+        const div = document.createElement('div');
+        div.className = 'card base-point-card';
+        const baseId = `base-${tab.id}`;
+
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'card-header';
+        const headerSpan = document.createElement('span');
+        headerSpan.textContent = '📍 0.0 基準点設定 (タブ専用)';
+        headerDiv.appendChild(headerSpan);
+        div.appendChild(headerDiv);
+
+        const inputGroup1 = document.createElement('div');
+        inputGroup1.className = 'input-group';
+        const label = document.createElement('label');
+        label.textContent = '基準点の説明・位置';
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = `base-point-desc-${tab.id}`;
+        input.placeholder = '例: 舞台センター奥の釘、など自由に記述';
+        input.value = tab.basePointDesc || '';
+        input.onchange = saveData;
+        inputGroup1.appendChild(label);
+        inputGroup1.appendChild(input);
+        div.appendChild(inputGroup1);
+
+        const inputGroup2 = document.createElement('div');
+        inputGroup2.className = 'input-group';
+
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.capture = 'environment';
+        fileInput.id = `photo-${baseId}`;
+        fileInput.style.display = 'none';
+        fileInput.onchange = (event) => handlePhoto(event, baseId);
+
+        const cameraBtn = document.createElement('button');
+        cameraBtn.type = 'button';
+        cameraBtn.className = 'camera-btn';
+        cameraBtn.id = `cameraBtn-${baseId}`;
+        cameraBtn.textContent = '📷 基準点の写真を選択/撮影';
+        cameraBtn.onclick = () => document.getElementById(`photo-${baseId}`).click();
+
+        const img = document.createElement('img');
+        img.id = `preview-${baseId}`;
+        img.className = 'photo-preview';
+        img.alt = '基準点の写真';
+        img.onclick = () => openImageModal(img.src);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'photo-delete-btn';
+        deleteBtn.id = `deletePhotoBtn-${baseId}`;
+        deleteBtn.style.display = 'none';
+        deleteBtn.textContent = '🗑️ 写真を削除';
+        deleteBtn.onclick = () => removePhoto(baseId);
+
+        inputGroup2.appendChild(fileInput);
+        inputGroup2.appendChild(cameraBtn);
+        inputGroup2.appendChild(img);
+        inputGroup2.appendChild(deleteBtn);
+        div.appendChild(inputGroup2);
+
+        setTimeout(() => {
+            if (window.appPhotos[baseId]) {
+                const preview = div.querySelector(`#preview-${baseId}`);
+                const camBtn = div.querySelector(`#cameraBtn-${baseId}`);
+                const delBtn = div.querySelector(`#deletePhotoBtn-${baseId}`);
+                if(preview) { preview.src = window.appPhotos[baseId]; preview.style.display = 'block'; }
+                if(camBtn) { camBtn.classList.add('has-photo'); camBtn.textContent = '✅ 写真撮影済み (タップで撮り直し)'; }
+                if(delBtn) { delBtn.style.display = 'block'; }
+            }
+        }, 0);
+
+        return div;
+    }
+
+    function createCardElement(card) {
+        const div = document.createElement('div');
+        div.className = `card ${card.isLocked ? 'is-locked' : ''}`;
+        div.setAttribute('data-id', card.id);
+        div.id = `card-${card.id}`;
+
+        let typeOptions = `<option value="">種類を選択</option>`;
+        for (const [key] of Object.entries(bamiriTypes)) {
+            const displayLabel = ['CM250', 'CM500', 'SL'].includes(key) ? `${escapeHtml(key)} -` : escapeHtml(key);
+            typeOptions += `<option value="${escapeHtml(key)}" ${card.typeVal===key?'selected':''}>${displayLabel}</option>`;
+        }
+        typeOptions += `<option value="custom" ${card.typeVal==='custom'?'selected':''}>✍️ 任意入力</option>`;
+
+        let numOptions = '<option value="">番号</option>';
+        if (bamiriTypes[card.typeVal] && card.typeVal !== 'custom') {
+            for(let i=1; i<=bamiriTypes[card.typeVal]; i++){
+                let nStr = String(i).padStart(2,'0');
+                numOptions += `<option value="${nStr}" ${card.numVal===nStr?'selected':''}>${nStr}</option>`;
+            }
+        }
+
+        const cVal = card.customVal || "";
+        const cName = card.name || "";
+        const dX = card.distX || "";
+        const dY = card.distY || "";
+        const note = card.note || "";
+
+        div.innerHTML = `
+            <div class="card-header">
+                <div class="bamiri-select-group">
+                    <div class="flex-row header-row">
+                        <select id="typeSelect-${card.id}" onchange="handleTypeChange('${card.id}')" ${card.isLocked?'disabled':''}>${typeOptions}</select>
+                        <select id="numSelect-${card.id}" style="display:${card.typeVal==='custom'?'none':'block'}" onchange="saveData()" ${card.isLocked?'disabled':''}>${numOptions}</select>
+                    </div>
+                    <input type="text" id="bamiriCustom-${card.id}" style="display:${card.typeVal==='custom'?'block':'none'};" placeholder="任意のバミリID" value="${escapeHtml(cVal)}" onchange="saveData()" ${card.isLocked?'disabled':''}>
+                </div>
+                <div class="header-actions">
+                    <button type="button" class="lock-btn ${card.isLocked?'locked-state':''}" id="lockBtn-${card.id}" onclick="toggleLock('${card.id}')">${card.isLocked?'🔒 解除':'🔓 ロック'}</button>
+                    <button type="button" class="delete-btn" id="deleteBtn-${card.id}" onclick="removeCard('${card.id}')" ${card.isLocked?'disabled style="opacity:0.5"':''}>削除</button>
+                </div>
+            </div>
+            <div class="input-group">
+                <label>バミリ名称</label>
+                <input type="text" id="name-${card.id}" placeholder="名称を入力" value="${escapeHtml(cName)}" onchange="saveData()" ${card.isLocked?'disabled':''}>
+            </div>
+            <div class="input-group">
+                <label>X距離 (基本は舞台のセンターから)</label>
+                <div class="flex-row">
+                    <select id="dirX-${card.id}" onchange="toggleDistX('${card.id}'); saveData();" ${card.isLocked?'disabled':''}>
+                        <option value="" ${card.dirX===''?'selected':''}>選択</option>
+                        <option value="上手" ${card.dirX==='上手'?'selected':''}>上手</option>
+                        <option value="下手" ${card.dirX==='下手'?'selected':''}>下手</option>
+                        <option value="センター" ${card.dirX==='センター'?'selected':''}>センター</option>
+                    </select>
+                    <span class="unit dist-x-parts-${card.id}" style="display:${card.dirX==='センター'?'none':''}">へ</span>
+                    <input type="number" id="distX-${card.id}" class="dist-x-parts-${card.id}" style="display:${card.dirX==='センター'?'none':''}" placeholder="0" value="${escapeHtml(dX)}" onchange="saveData()" ${card.isLocked?'disabled':''}>
+                    <span class="unit dist-x-parts-${card.id}" style="display:${card.dirX==='センター'?'none':''}">mm</span>
+                </div>
+            </div>
+            <div class="input-group">
+                <label>Y距離 (基本は舞台前から)</label>
+                <div class="flex-row">
+                    <select id="dirY-${card.id}" onchange="saveData()" ${card.isLocked?'disabled':''}>
+                        <option value="奥" ${card.dirY==='奥' || card.dirY==='' ?'selected':''}>奥</option>
+                        <option value="前" ${card.dirY==='前'?'selected':''}>前</option>
+                    </select>
+                    <span class="unit">へ</span>
+                    <input type="number" id="distY-${card.id}" placeholder="0" value="${escapeHtml(dY)}" onchange="saveData()" ${card.isLocked?'disabled':''}>
+                    <span class="unit">mm</span>
+                </div>
+            </div>
+            <div class="input-group">
+                <label>備考</label>
+                <input type="text" id="note-${card.id}" placeholder="メモ" value="${escapeHtml(note)}" onchange="saveData()" ${card.isLocked?'disabled':''}>
+            </div>
+            <div class="input-group">
+                <input type="file" accept="image/*" capture="environment" id="photo-${card.id}" style="display:none;" onchange="handlePhoto(event, '${card.id}')">
+                <button type="button" class="camera-btn" id="cameraBtn-${card.id}" onclick="document.getElementById('photo-${card.id}').click()" ${card.isLocked?'disabled':''}>
+                    📷 記録写真を選択/撮影
+                </button>
+                <img id="preview-${card.id}" class="photo-preview" alt="記録写真" onclick="openImageModal(this.src)">
+                <button type="button" class="photo-delete-btn" id="deletePhotoBtn-${card.id}" style="display:none;" onclick="removePhoto('${card.id}')" ${card.isLocked?'disabled':''}>🗑️ 写真を削除</button>
+            </div>
+        `;
+
+        setTimeout(() => {
+            if (window.appPhotos[card.id]) {
+                const preview = div.querySelector(`#preview-${card.id}`);
+                const camBtn = div.querySelector(`#cameraBtn-${card.id}`);
+                const delBtn = div.querySelector(`#deletePhotoBtn-${card.id}`);
+                if(preview) { preview.src = window.appPhotos[card.id]; preview.style.display = 'block'; }
+                if(camBtn) { camBtn.classList.add('has-photo'); camBtn.innerHTML = '✅ 写真撮影済み (タップで撮り直し)'; }
+                if(delBtn) { delBtn.style.display = 'block'; }
+            }
+        }, 0);
+
+        return div;
+    }
+
+    function addCard(prefillType = "", prefillNum = "") {
+        syncDOMtoData();
+        const activeTab = appData.tabs.find(t => t.id === appData.activeTabId);
+        if(activeTab) {
+            activeTab.cards.push(createEmptyCardData(prefillType, prefillNum));
+            renderCards();
+            saveData();
+            updateStorageStatus();
+        }
+    }
+
+    function addSimilarCard() {
+        syncDOMtoData();
+        const activeTab = appData.tabs.find(t => t.id === appData.activeTabId);
+        if (!activeTab || activeTab.cards.length === 0) { addCard(); return; }
+
+        const lastCard = activeTab.cards[activeTab.cards.length - 1];
+        if (!lastCard.typeVal || lastCard.typeVal === "custom") { addCard(lastCard.typeVal); return; }
+
+        let nextNumInt = 1;
+        if (lastCard.numVal) nextNumInt = parseInt(lastCard.numVal, 10) + 1;
+
+        const maxNum = bamiriTypes[lastCard.typeVal];
+        if (nextNumInt > maxNum) {
+            alert(`${lastCard.typeVal}は${maxNum}番までです。新しい枠のみ追加します。`);
+            addCard(lastCard.typeVal); 
+        } else {
+            const nextNumStr = String(nextNumInt).padStart(2, '0');
+            addCard(lastCard.typeVal, nextNumStr);
+        }
+        setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 50);
+    }
+
+    function toggleLock(id) {
+        syncDOMtoData();
+        const activeTab = appData.tabs.find(t => t.id === appData.activeTabId);
+        const card = activeTab.cards.find(c => c.id === id);
+        if(card) card.isLocked = !card.isLocked;
+        renderCards();
+        saveData();
+    }
+
+    async function removeCard(id) {
+        syncDOMtoData();
+        const activeTab = appData.tabs.find(t => t.id === appData.activeTabId);
+        if(activeTab) {
+            activeTab.cards = activeTab.cards.filter(c => c.id !== id);
+            await removePhotoFromStore(id);
+            renderCards();
+            saveData();
+            updateStorageStatus('カードと関連写真を削除しました。');
+        }
+    }
+
+    async function removePhoto(id) {
+        if(confirm("撮影した写真を削除しますか？")) {
+            await removePhotoFromStore(id);
+            const preview = document.getElementById(`preview-${id}`);
+            if(preview) { preview.src = ""; preview.style.display = 'none'; }
+
+            const deleteBtn = document.getElementById(`deletePhotoBtn-${id}`);
+            if(deleteBtn) deleteBtn.style.display = 'none';
+
+            const cameraBtn = document.getElementById(`cameraBtn-${id}`);
+            if(cameraBtn) {
+                cameraBtn.classList.remove('has-photo');
+                cameraBtn.innerHTML = id.startsWith('base-') ? '📷 基準点の写真を選択/撮影' : '📷 記録写真を選択/撮影';
+            }
+            const fileInput = document.getElementById(`photo-${id}`);
+            if(fileInput) fileInput.value = "";
+
+            saveData();
+            updateStorageStatus('写真を削除しました。');
+        }
+    }
+
+    async function exportZIP() {
+        updateStorageStatus();
+        if (typeof JSZip === 'undefined') {
+            alert('ZIP保存に必要なライブラリの読み込みに失敗しました。\nこの修正版では再発しにくくしてありますが、再度このHTMLを開き直して試してください。');
+            return;
+        }
+        syncDOMtoData();
+        await preloadAllPhotos();
+        const eventTitle = appData.eventTitle;
+        let hasAnyData = false;
+
+        appData.tabs.forEach(t => {
+            if (t.cards.length > 0 || t.basePointDesc || window.appPhotos[`base-${t.id}`]) hasAnyData = true;
+        });
+
+        if (!hasAnyData) {
+            alert("データがありません。"); return;
+        }
+
+        const overlay = document.getElementById('loading-overlay');
+        overlay.innerHTML = 'ZIPデータをまとめています...📦<br>しばらくお待ちください';
+        overlay.style.display = 'flex';
+
+        try {
+            const zip = new JSZip();
+            let csvContent = "\uFEFF"; 
+            const fileNamePrefix = getFileNamePrefix();
+
+            if (eventTitle) csvContent += `公演タイトル,${escapeCSV(eventTitle)}\n\n`;
+
+            csvContent += 'タブ名(シーン),バミリID,バミリ名称,"X方向\n(上手/下手)",,X距離,,"Y方向\n(前/奥)",,Y距離,,備考,\n';
+
+            appData.tabs.forEach(tab => {
+                let basePhotoName = "";
+                const baseId = `base-${tab.id}`;
+                if (window.appPhotos[baseId]) {
+                    basePhotoName = sanitizeFileName(`${tab.name}_基準点.jpg`);
+                    zip.file(basePhotoName, window.appPhotos[baseId].split(',')[1], {base64: true}); 
+                }
+                let baseCSVNote = tab.basePointDesc || "";
+                if (basePhotoName) baseCSVNote += baseCSVNote ? ` (写真: ${basePhotoName})` : `(写真: ${basePhotoName})`;
+
+                let baseRow = [tab.name, "📍基準点", "", "", "", "", "", "", "", "", "", baseCSVNote];
+                csvContent += baseRow.map(item => escapeCSV(item)).join(",") + "\n";
+
+                tab.cards.forEach(card => {
+                    let finalBamiriId = card.typeVal === "custom" ? card.customVal : (card.typeVal && card.numVal ? `${card.typeVal}ー${card.numVal}` : "");
+                    const safeFileNameId = sanitizeFileName(finalBamiriId) || `未設定_${card.id}`;
+
+                    let photoFileName = "";
+                    if (window.appPhotos[card.id]) {
+                        photoFileName = sanitizeFileName(`${tab.name}_${safeFileNameId}.jpg`);
+                        zip.file(photoFileName, window.appPhotos[card.id].split(',')[1], {base64: true}); 
+                    }
+
+                    let outHeX = "へ"; let outDistX = card.distX; let outMmX = "mm";
+                    if (card.dirX === "センター") { outHeX = ""; outDistX = ""; outMmX = ""; }
+
+                    let outNote = card.note;
+                    if (photoFileName) outNote += outNote ? ` (写真: ${photoFileName})` : `(写真: ${photoFileName})`;
+
+                    let row = [
+                        tab.name, finalBamiriId, card.name, card.dirX, outHeX, outDistX, outMmX, card.dirY, "へ", card.distY, "mm", outNote
+                    ];
+
+                    csvContent += row.map(item => escapeCSV(item)).join(",") + "\n";
+                });
+            });
+
+            zip.file(`${fileNamePrefix}_全リスト.csv`, csvContent);
+            const content = await zip.generateAsync({ type: "blob" });
+            const url = URL.createObjectURL(content);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `${fileNamePrefix}.zip`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+        } catch (error) {
+            console.error(error); alert("保存中にエラーが発生しました。\n" + error.message);
+        } finally {
+            overlay.style.display = 'none';
+        }
+    }
+
+    function executeCADExport() {
+        closeCADModal();
+        syncDOMtoData();
+
+        const incTab = document.getElementById('cad-chk-tab').checked;
+        const incTitle = document.getElementById('cad-chk-title').checked;
+        const incId = document.getElementById('cad-chk-id').checked;
+        const incName = document.getElementById('cad-chk-name').checked;
+        const incNote = document.getElementById('cad-chk-note').checked;
+        const eventTitle = sanitizeCADText(appData.eventTitle);
+
+        let vsContent = "PROCEDURE ImportBamiri;\nBEGIN\n";
+
+        appData.tabs.forEach(tab => {
+            const safeTabName = sanitizeCADText(tab.name);
+
+            tab.cards.forEach(card => {
+                let finalBamiriId = card.typeVal === "custom" ? card.customVal : (card.typeVal && card.numVal ? `${card.typeVal}-${card.numVal}` : "");
+                let x = 0;
+                if (card.dirX === "上手") x = Number(card.distX) || 0; else if (card.dirX === "下手") x = -(Number(card.distX) || 0);
+                let y = 0;
+                if (card.dirY === "奥") y = Number(card.distY) || 0; else if (card.dirY === "前") y = -(Number(card.distY) || 0);
+
+                let safeName = sanitizeCADText(card.name || "");
+                let safeId = sanitizeCADText(finalBamiriId);
+                let safeNote = sanitizeCADText(card.note || "");
+
+                let labelParts = [];
+                if (incTab && safeTabName) labelParts.push(safeTabName);
+                if (incTitle && eventTitle) labelParts.push(eventTitle);
+                if (incId && safeId) labelParts.push(safeId);
+                if (incName && safeName) labelParts.push(safeName);
+                if (incNote && safeNote) labelParts.push(safeNote);
+
+                let labelText = labelParts.join(' : ');
+
+                vsContent += `  Locus(${x}, ${y});\n`;
+                if (labelText) {
+                    vsContent += `  TextOrigin(${x + 100}, ${y + 100});\n  CreateText('${labelText}');\n`;
+                }
+            });
+        });
+
+        vsContent += "END;\nRun(ImportBamiri);\n";
+
+        const blob = new Blob([vsContent], { type: 'text/plain;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${getFileNamePrefix()}_VWスクリプト.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function exportPDF() {
+        syncDOMtoData();
+        const originalTitle = document.title;
+        const mainContent = document.getElementById('main-content');
+        const originalMainContent = mainContent.innerHTML;
+        document.title = getFileNamePrefix();
+
+        const printWrapper = document.createElement('div');
+        printWrapper.id = 'print-wrapper';
+
+        const titleCard = document.createElement('div');
+        titleCard.className = 'card title-card';
+        titleCard.innerHTML = `
+            <div class="card-header"><span>📝 公演タイトル (共通)</span></div>
+            <div class="input-group">
+                <label>公演タイトル</label>
+                <span class="print-text-wrap">${escapeHtml(appData.eventTitle || ' ')}</span>
+            </div>
+        `;
+        printWrapper.appendChild(titleCard);
+
+        appData.tabs.forEach(tab => {
+            const tabTitle = document.createElement('div');
+            tabTitle.className = 'print-tab-title';
+            tabTitle.textContent = `【 ${tab.name} 】`;
+            printWrapper.appendChild(tabTitle);
+
+            printWrapper.appendChild(createBasePointElement(tab));
+
+            tab.cards.forEach(card => {
+                printWrapper.appendChild(createCardElement(card));
+            });
+        });
+
+        mainContent.innerHTML = '';
+        mainContent.appendChild(printWrapper);
+
+        document.querySelectorAll('select').forEach(sel => { if (sel.value === "") sel.classList.add('is-empty-print'); });
+        document.querySelectorAll('input[type="text"]').forEach(input => {
+            if (input.style.display === 'none') return;
+            const span = document.createElement('span');
+            span.className = 'print-text-wrap';
+            span.textContent = input.value || ' ';
+            input.parentNode.insertBefore(span, input.nextSibling);
+            input.setAttribute('data-print-hidden', 'true');
+            input.style.display = 'none';
+        });
+
+        setTimeout(() => {
+            window.print();
+            setTimeout(() => {
+                document.title = originalTitle;
+                mainContent.innerHTML = originalMainContent;
+                document.getElementById('event-title').value = appData.eventTitle || '';
+                renderTabs();
+                renderCards();
+            }, 1000);
+        }, 500);
+    }
+
+    window.onload = loadData;
+
+    async function registerServiceWorker() {
+        if (!('serviceWorker' in navigator)) return;
+        if (!(location.protocol === 'https:' || location.hostname === 'localhost')) return;
+        try {
+            await navigator.serviceWorker.register('./sw.js');
+            console.log('Service Worker registered');
+        } catch (e) {
+            console.error('Service Worker registration failed:', e);
+        }
+    }
+
+    window.addEventListener('load', registerServiceWorker);
+</script>
+
+</body>
+</html>

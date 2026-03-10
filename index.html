@@ -196,7 +196,7 @@
             .card {
                 box-shadow: none !important; border: 1px solid #333 !important; border-radius: 0 !important;
                 margin-bottom: 10px !important; padding: 10px 15px !important; background-color: #fff !important;
-                page-break-inside: avoid !important; break-inside: avoid !important;
+                page-break-inside: auto !important; break-inside: auto !important;
             }
             .card-header { border-bottom: 2px solid #333 !important; padding-bottom: 5px !important; margin-bottom: 8px !important; }
             .base-point-card .card-header, .title-card .card-header { border-bottom-color: #333 !important; color: #333 !important; }
@@ -215,7 +215,7 @@
             ::-webkit-input-placeholder { color: transparent !important; }
             select.is-empty-print { color: transparent !important; }
             .print-text-wrap {
-                flex: 1; border-bottom: 1px dashed #666; word-break: break-all; white-space: pre-wrap;
+                flex: 1; border-bottom: 1px dashed #666; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;
                 padding: 2px 5px; font-weight: bold; color: #000; font-size: 11pt; min-height: 1.2em; text-align: left;
             }
             .print-tab-title {
@@ -227,7 +227,7 @@
 <body>
 
 <header>
-    バミリ計測メモ<span class="version-text">v0.3.3 PWA</span>
+    バミリ計測メモ<span class="version-text">v0.3.4 PWA</span>
     <button class="header-reset-btn" onclick="resetData()">全消去</button>
 </header>
 

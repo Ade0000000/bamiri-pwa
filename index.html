@@ -13,43 +13,34 @@
     <meta name="apple-mobile-web-app-title" content="舞台リンクメモ">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
-
     <style>
         :root {
-            --color-bg: #f7f8fa;
-            --color-surface: #ffffff;
-            --color-surface-subtle: #f3f6fb;
-            --color-border: #c8d1dc;
-            --color-border-strong: #8fa3bf;
-            --color-text: #1f2937;
-            --color-text-subtle: #4b5563;
-            --color-primary: #1d4f91;
-            --color-primary-hover: #173f73;
-            --color-accent: #0f766e;
-            --color-warning: #b45309;
-            --color-danger: #b42318;
-            --color-success: #12715b;
-            --radius: 12px;
-            --shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
-            --space-1: 4px;
-            --space-2: 8px;
-            --space-3: 12px;
-            --space-4: 16px;
-            --space-5: 20px;
-            --space-6: 24px;
+            --bg: #f5f7fa;
+            --surface: #ffffff;
+            --surface-subtle: #eef4ff;
+            --text: #223045;
+            --muted: #5d6b82;
+            --line: #d4dce8;
+            --line-strong: #9fb0c8;
+            --primary: #1d4f91;
+            --primary-dark: #173f73;
+            --success: #177245;
+            --warning: #b7791f;
+            --danger: #c0392b;
+            --purple: #7d4ab0;
+            --shadow: 0 2px 8px rgba(16, 24, 40, 0.08);
+            --radius: 10px;
         }
-
         * { box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
-            background: var(--color-bg);
             margin: 0;
-            color: var(--color-text);
-            line-height: 1.5;
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
         }
         header {
-            background: var(--color-primary);
-            color: #fff;
+            background: var(--primary);
+            color: white;
             padding: 14px 16px;
             text-align: center;
             font-size: 1.15rem;
@@ -69,60 +60,63 @@
             position: absolute;
             right: 12px;
             top: 10px;
-            background: #fff;
-            color: var(--color-danger);
-            border: 1px solid rgba(255,255,255,0.5);
+            background: white;
+            color: var(--danger);
+            border: 1px solid rgba(255,255,255,0.4);
             border-radius: 999px;
             padding: 7px 12px;
             font-size: 0.82rem;
             font-weight: 700;
             cursor: pointer;
         }
-
         .container {
             padding: 12px;
-            padding-bottom: 130px;
+            padding-bottom: 132px;
             max-width: 860px;
             margin: 0 auto;
         }
-
         .card {
-            background: var(--color-surface);
+            background: var(--surface);
             border-radius: var(--radius);
-            padding: var(--space-4);
-            margin-bottom: var(--space-4);
+            padding: 16px;
+            margin-bottom: 14px;
             box-shadow: var(--shadow);
-            border: 1px solid var(--color-border);
+            border: 1px solid var(--line);
         }
         .title-card, .base-point-card, .storage-status-card {
-            background: var(--color-surface-subtle);
+            background: var(--surface-subtle);
         }
+        .storage-status-card.warn { border-color: #e3b341; }
+        .storage-status-card.error { border-color: #d92d20; }
         .card-header {
             font-weight: 700;
-            border-bottom: 1px solid var(--color-border);
+            border-bottom: 1px solid var(--line);
             padding-bottom: 10px;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
             gap: 10px;
         }
-        .storage-status-card.warn { border-color: #e3b341; }
-        .storage-status-card.error { border-color: #d92d20; }
-        .status-text { font-size: 0.92rem; line-height: 1.6; white-space: pre-wrap; color: var(--color-text-subtle); }
-
+        .status-text {
+            font-size: 0.92rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            color: var(--muted);
+        }
         .input-group { margin-bottom: 12px; }
         .input-group label {
             display: block;
             font-size: 0.92rem;
-            color: var(--color-text);
+            color: var(--text);
             margin-bottom: 6px;
             font-weight: 700;
         }
         .help-text {
             font-size: 0.84rem;
-            color: var(--color-text-subtle);
+            color: var(--muted);
             margin-top: 4px;
+            line-height: 1.5;
         }
         .flex-row {
             display: flex;
@@ -130,60 +124,51 @@
             gap: 10px;
             width: 100%;
         }
-        .flex-row > * { min-width: 0; }
+        .type-row {
+            display: grid;
+            grid-template-columns: 1.3fr 0.85fr;
+            gap: 10px;
+        }
         input[type="text"], input[type="number"], select, textarea {
             width: 100%;
             padding: 11px 12px;
-            border: 1px solid var(--color-border-strong);
+            border: 1px solid var(--line-strong);
             border-radius: 10px;
             font-size: 1rem;
             background: #fff;
-            color: var(--color-text);
+            color: var(--text);
         }
-        textarea {
-            min-height: 84px;
-            resize: vertical;
-        }
+        textarea { min-height: 86px; resize: vertical; }
         input:disabled, select:disabled, button:disabled, textarea:disabled {
-            background-color: #eef2f6;
+            background: #eef2f6;
             color: #667085;
             opacity: 1;
             -webkit-text-fill-color: #667085;
         }
-        .unit { font-size: 0.92rem; color: var(--color-text-subtle); white-space: nowrap; }
-
-        .type-row {
-            display: grid;
-            grid-template-columns: 1.3fr 0.8fr;
-            gap: 10px;
-        }
+        .unit { font-size: 0.92rem; color: var(--muted); white-space: nowrap; }
 
         .header-actions {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
         }
-        .delete-btn, .lock-btn, .secondary-inline-btn {
+        .delete-btn, .lock-btn, .action-btn {
             color: white;
             border: none;
             border-radius: 999px;
-            padding: 8px 12px;
+            padding: 9px 12px;
             font-size: 0.84rem;
             cursor: pointer;
             white-space: nowrap;
             font-weight: 700;
         }
-        .delete-btn { background-color: var(--color-danger); }
+        .delete-btn { background-color: var(--danger); }
         .lock-btn { background-color: #667085; }
-        .lock-btn.locked-state { background-color: var(--color-warning); }
-        .secondary-inline-btn {
-            background: #eef4ff;
-            color: var(--color-primary);
-            border: 1px solid #b8c8e6;
-        }
+        .lock-btn.locked-state { background-color: var(--warning); }
+        .action-btn { background-color: var(--primary); }
 
         .camera-btn {
-            background-color: var(--color-primary);
+            background-color: var(--primary);
             color: white;
             border: none;
             border-radius: 999px;
@@ -196,7 +181,8 @@
             justify-content: center;
             gap: 6px;
         }
-        .camera-btn.has-photo { background-color: var(--color-success); }
+        .camera-btn.has-photo { background-color: var(--success); }
+
         .photo-preview {
             width: 100%;
             max-height: 260px;
@@ -204,16 +190,16 @@
             border-radius: 10px;
             margin-top: 10px;
             display: none;
-            border: 1px solid var(--color-border);
-            background-color: #000;
+            border: 1px solid var(--line);
+            background: #000;
             cursor: pointer;
         }
         .photo-delete-btn {
-            background-color: transparent;
-            color: var(--color-danger);
+            background: transparent;
+            color: var(--danger);
             border: 1px solid #e4b1ab;
             border-radius: 999px;
-            padding: 7px 10px;
+            padding: 8px 10px;
             font-size: 0.84rem;
             font-weight: 700;
             cursor: pointer;
@@ -227,48 +213,54 @@
             margin-top: 10px;
         }
         .photo-item {
-            border: 1px solid var(--color-border);
+            border: 1px solid var(--line);
             border-radius: 10px;
             padding: 10px;
-            background: #fff;
+            background: white;
         }
 
         .tab-container {
             display: flex;
             overflow-x: auto;
-            background-color: transparent;
-            padding: 0 0 4px 0;
-            margin-bottom: 14px;
+            background-color: #e1e7f0;
+            padding: 10px 10px 0;
+            border-radius: 10px 10px 0 0;
+            margin-bottom: 15px;
             gap: 6px;
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
         .tab-container::-webkit-scrollbar { display: none; }
-        .tab-btn, .tab-add-btn {
-            padding: 11px 14px;
-            border-radius: 999px;
+        .tab-btn {
+            padding: 12px 15px;
+            background-color: #cfd8e6;
+            color: #1e293b;
+            border-radius: 10px 10px 0 0;
             font-weight: 700;
-            font-size: 0.94rem;
+            font-size: 0.95rem;
             cursor: pointer;
             white-space: nowrap;
-            display: inline-flex;
+            display: flex;
             align-items: center;
             gap: 8px;
-            border: 1px solid var(--color-border);
-            background: #fff;
-            color: var(--color-text);
+            border: 1px solid transparent;
         }
         .tab-btn.active {
-            background-color: var(--color-primary);
+            background-color: var(--primary);
             color: white;
-            border-color: var(--color-primary);
-        }
-        .tab-add-btn {
-            background-color: #f0f7ff;
-            color: var(--color-primary);
-            border-color: #b8c8e6;
         }
         .tab-edit-icon, .tab-delete-icon { font-size: 0.92rem; cursor: pointer; opacity: 0.9; }
+        .tab-add-btn {
+            padding: 12px 15px;
+            background-color: #edf4ff;
+            color: var(--primary);
+            border-radius: 10px 10px 0 0;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            white-space: nowrap;
+            border: 1px solid #c4d4ea;
+        }
 
         .button-group {
             display: flex;
@@ -287,8 +279,8 @@
             box-shadow: var(--shadow);
             cursor: pointer;
         }
-        .btn-primary { background-color: var(--color-primary); }
-        .btn-secondary { background-color: var(--color-accent); }
+        .btn-primary { background-color: var(--primary); }
+        .btn-secondary { background-color: var(--success); }
 
         .floating-btn-container {
             position: fixed;
@@ -309,59 +301,110 @@
             padding: 12px 0;
             font-size: 0.9rem;
             font-weight: 700;
-            box-shadow: 0 4px 12px rgba(16, 24, 40, 0.18);
+            box-shadow: 0 4px 12px rgba(16,24,40,0.18);
             cursor: pointer;
             line-height: 1.3;
         }
-        .zip-btn { background-color: var(--color-success); }
-        .cad-btn { background-color: var(--color-accent); }
-        .pdf-btn { background-color: var(--color-danger); }
+        .zip-btn { background-color: var(--success); }
+        .cad-btn { background-color: var(--purple); }
+        .pdf-btn { background-color: var(--danger); }
 
         #loading-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.72); color: white; display: none; justify-content: center; align-items: center;
-            font-size: 1.1rem; font-weight: 700; z-index: 1000; text-align: center; padding: 20px;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.72);
+            color: white;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: 700;
+            z-index: 1000;
+            text-align: center;
+            padding: 20px;
         }
 
         .image-modal, .cad-modal {
-            display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%;
-            background-color: rgba(15,23,42,0.88); justify-content: center; align-items: center; flex-direction: column;
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(15,23,42,0.88);
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
         }
         .cad-modal { background-color: rgba(15,23,42,0.65); }
-        .image-modal-content { max-width: 95%; max-height: 90%; border-radius: 8px; object-fit: contain; }
+        .image-modal-content {
+            max-width: 95%;
+            max-height: 90%;
+            border-radius: 8px;
+            object-fit: contain;
+        }
         .image-modal-close {
-            position: absolute; top: 15px; right: 25px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 2001;
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 2001;
         }
 
         .cad-modal-box {
-            background-color: #fff; padding: 20px; border-radius: 14px; width: 92%; max-width: 380px; border: 1px solid var(--color-border);
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 14px;
+            width: 92%;
+            max-width: 380px;
+            border: 1px solid var(--line);
         }
         .cad-modal-title {
-            font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; border-bottom: 1px solid var(--color-border); padding-bottom: 8px; color: var(--color-primary);
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 8px;
+            color: var(--primary);
         }
-        .cad-checkbox-group { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; }
-        .cad-checkbox-group label { display: flex; align-items: center; font-size: 1rem; font-weight: 700; cursor: pointer; color: var(--color-text); }
-        .cad-checkbox-group input[type="checkbox"] { width: 22px; height: 22px; margin-right: 10px; }
-        .cad-modal-buttons { display: flex; justify-content: flex-end; gap: 10px; }
-        .cad-btn-cancel, .cad-btn-exec {
-            border: none; padding: 10px 14px; border-radius: 999px; font-weight: 700; cursor: pointer;
+        .cad-checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 20px 0;
         }
-        .cad-btn-cancel { background-color: #e5e7eb; color: var(--color-text); }
-        .cad-btn-exec { background-color: var(--color-primary); color: white; }
-
-        .toggle-row {
+        .cad-checkbox-group label {
             display: flex;
             align-items: center;
-            gap: 8px;
+            font-size: 1rem;
             font-weight: 700;
+            cursor: pointer;
+            color: var(--text);
         }
-        .toggle-row input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
+        .cad-checkbox-group input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            margin-right: 10px;
         }
+        .cad-modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .cad-btn-cancel, .cad-btn-exec {
+            border: none;
+            padding: 10px 14px;
+            border-radius: 999px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .cad-btn-cancel { background: #e5e7eb; color: var(--text); }
+        .cad-btn-exec { background: var(--primary); color: white; }
 
         details.disclosure {
-            border: 1px solid var(--color-border);
+            border: 1px solid var(--line);
             border-radius: 10px;
             background: #fff;
             padding: 0;
@@ -373,19 +416,29 @@
             cursor: pointer;
             padding: 12px 14px;
             font-weight: 700;
-            color: var(--color-primary);
+            color: var(--primary);
             background: #f7fbff;
         }
         details.disclosure summary::-webkit-details-marker { display: none; }
         .disclosure-body {
             padding: 12px 14px 4px 14px;
-            border-top: 1px solid var(--color-border);
+            border-top: 1px solid var(--line);
+        }
+
+        .record-footer-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .record-footer-actions .lock-btn,
+        .record-footer-actions .delete-btn {
+            flex: 1;
         }
 
         @media print {
             @page { margin: 10mm; }
-            body { background-color: #fff !important; color: #000 !important; padding: 0 !important; font-size: 11pt; }
-            header, .button-group, .floating-btn-container, .header-actions, .camera-btn, .image-modal, .photo-delete-btn, .cad-modal, .tab-container, details summary {
+            body { background-color: #fff !important; color: #000 !important; font-size: 11pt; }
+            header, .button-group, .floating-btn-container, .header-actions, .camera-btn, .image-modal, .photo-delete-btn, .cad-modal, .tab-container, details summary, .record-footer-actions {
                 display: none !important;
             }
             details.disclosure {
@@ -399,30 +452,79 @@
                 border: none !important;
             }
             .card {
-                box-shadow: none !important; border: 1px solid #333 !important; border-radius: 0 !important;
-                margin-bottom: 10px !important; padding: 10px 15px !important; background-color: #fff !important;
-                page-break-inside: auto !important; break-inside: auto !important;
+                box-shadow: none !important;
+                border: 1px solid #333 !important;
+                border-radius: 0 !important;
+                margin-bottom: 10px !important;
+                padding: 10px 15px !important;
+                background-color: #fff !important;
+                page-break-inside: auto !important;
+                break-inside: auto !important;
             }
-            .card-header { border-bottom: 2px solid #333 !important; padding-bottom: 5px !important; margin-bottom: 8px !important; }
-            .input-group { display: flex !important; flex-direction: row !important; align-items: flex-start !important; margin-bottom: 4px !important; }
-            .input-group label { width: 170px; min-width: 170px; margin-bottom: 0 !important; color: #000 !important; font-size: 10pt; padding-top: 2px; }
+            .card-header {
+                border-bottom: 2px solid #333 !important;
+                padding-bottom: 5px !important;
+                margin-bottom: 8px !important;
+            }
+            .input-group {
+                display: flex !important;
+                flex-direction: row !important;
+                align-items: flex-start !important;
+                margin-bottom: 4px !important;
+            }
+            .input-group label {
+                width: 170px;
+                min-width: 170px;
+                margin-bottom: 0 !important;
+                color: #000 !important;
+                font-size: 10pt;
+                padding-top: 2px;
+            }
             .flex-row { justify-content: flex-start !important; gap: 5px !important; }
             input, select, textarea {
-                flex: 0 0 auto !important; width: auto !important; min-width: 30px; border: none !important;
-                border-bottom: 1px dashed #666 !important; border-radius: 0 !important; background: transparent !important;
-                padding: 0 5px !important; text-align: center; appearance: none !important; -webkit-appearance: none !important;
-                font-weight: bold; color: #000 !important; font-size: 11pt;
+                flex: 0 0 auto !important;
+                width: auto !important;
+                min-width: 30px;
+                border: none !important;
+                border-bottom: 1px dashed #666 !important;
+                border-radius: 0 !important;
+                background: transparent !important;
+                padding: 0 5px !important;
+                text-align: center;
+                appearance: none !important;
+                -webkit-appearance: none !important;
+                font-weight: bold;
+                color: #000 !important;
+                font-size: 11pt;
             }
             textarea { min-height: 1.2em !important; }
-            .photo-preview { max-height: 120px !important; border: 1px solid #999 !important; background-color: transparent !important; margin-top: 5px !important; cursor: default !important; display: block !important; }
-            ::-webkit-input-placeholder { color: transparent !important; }
-            select.is-empty-print { color: transparent !important; }
+            .photo-preview {
+                max-height: 120px !important;
+                border: 1px solid #999 !important;
+                background-color: transparent !important;
+                margin-top: 5px !important;
+                cursor: default !important;
+                display: block !important;
+            }
             .print-text-wrap {
-                flex: 1; border-bottom: 1px dashed #666; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere;
-                padding: 2px 5px; font-weight: bold; color: #000; font-size: 11pt; min-height: 1.2em; text-align: left;
+                flex: 1;
+                border-bottom: 1px dashed #666;
+                white-space: pre-wrap;
+                word-break: break-word;
+                overflow-wrap: anywhere;
+                padding: 2px 5px;
+                font-weight: bold;
+                color: #000;
+                font-size: 11pt;
+                min-height: 1.2em;
+                text-align: left;
             }
             .print-tab-title {
-                font-size: 14pt; font-weight: bold; border-bottom: 2px solid #000; padding-bottom: 5px; margin: 20px 0 10px 0;
+                font-size: 14pt;
+                font-weight: bold;
+                border-bottom: 2px solid #000;
+                padding-bottom: 5px;
+                margin: 20px 0 10px 0;
             }
         }
     </style>
@@ -430,7 +532,7 @@
 <body>
 
 <header>
-    舞台リンクメモ<span class="version-text">v0.4.1</span>
+    舞台リンクメモ<span class="version-text">v0.4.3</span>
     <button class="header-reset-btn" onclick="resetData()">全消去</button>
 </header>
 
@@ -490,544 +592,1193 @@
 </div>
 
 <script>
-    const recordTypes = {
-        "CM250": 12, "CM500": 12, "SL": 11,
-        "出演者": 100, "小道具": 100, "大道具": 100,
-        "吊物": 100, "照明": 100, "音響": 100, "映像": 100,
-        "特殊効果": 100, "衣裳": 100, "その他": 100
+const RECORD_TYPES = {
+    "CM250": 12, "CM500": 12, "SL": 11,
+    "出演者": 100, "小道具": 100, "大道具": 100,
+    "吊物": 100, "照明": 100, "音響": 100, "映像": 100,
+    "特殊効果": 100, "衣裳": 100, "その他": 100
+};
+const SAVE_KEY = "stageLinkMemo_v043";
+const PHOTO_KEY_PREFIX = "stageLinkMemoPhoto_v043_";
+const LEGACY_SAVE_KEYS = ["stageLinkMemoSaveData_v041", "bamiriAppSaveData_v023", "bamiriAppSaveData_v022", "bamiriAppSaveData_v021"];
+const LEGACY_PHOTO_KEYS = ["bamiriAppPhotosDB_v023", "bamiriAppPhotosDB_v022", "bamiriAppPhotosDB_v021"];
+const MAX_RECORD_PHOTOS = 3;
+
+window.appPhotos = {};
+let storagePersistenceGranted = null;
+let photoStoreHealth = null;
+
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+let appData = {
+    eventTitle: "",
+    tabs: [
+        { id: generateId(), name: "シーン1", usePosition: false, basePointDesc: "", cards: [createEmptyCardData()] }
+    ],
+    activeTabId: null
+};
+
+function createEmptyCardData(prefillType, prefillNum) {
+    return {
+        id: generateId(),
+        typeVal: prefillType || "",
+        numVal: prefillNum || "",
+        customVal: "",
+        name: "",
+        hasPosition: false,
+        dirX: "",
+        distX: "",
+        dirY: "奥",
+        distY: "",
+        note: "",
+        isLocked: false,
+        photos: []
     };
+}
 
-    const SAVE_KEY = 'stageLinkMemoSaveData_v041';
-    const PHOTO_KEY_PREFIX = 'stageLinkMemoPhoto_v041_';
-    const LEGACY_SAVE_KEYS = ['bamiriAppSaveData_v023', 'bamiriAppSaveData_v022', 'bamiriAppSaveData_v021'];
-    const LEGACY_PHOTO_DB_KEYS = ['bamiriAppPhotosDB_v023', 'bamiriAppPhotosDB_v022', 'bamiriAppPhotosDB_v021'];
-    const MAX_RECORD_PHOTOS = 3;
-    window.appPhotos = {};
-
-    let appData = {
-        eventTitle: "",
-        tabs: [
-            { id: generateId(), name: "シーン1", usePosition: false, basePointDesc: "", cards: [] }
-        ],
-        activeTabId: null
-    };
-    let storagePersistenceGranted = null;
-    let photoStoreHealth = null;
-
-    function generateId() {
-        return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-    }
-
-    function escapeHtml(value) {
-        return String(value ?? '')
-            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
-
-    function sanitizeFileName(name) {
-        if (!name) return "";
-        return String(name).replace(/[\\/:*?"<>|]/g, '_').replace(/[\x00-\x1F\x7F]/g, '').trim();
-    }
-
-    function sanitizeCADText(value) {
-        return String(value ?? '').replace(/[\r\n\t]+/g, ' ').replace(/'/g, '').replace(/[\x00-\x1F\x7F]/g, ' ').replace(/\s+/g, ' ').trim();
-    }
-
-    function escapeCSV(val) {
-        if (!val && val !== 0) return "";
-        let str = String(val).replace(/[\r\n]+/g, ' ');
-        if (/^[=+\-@]/.test(str)) str = "'" + str;
-        return `"${str.replace(/"/g, '""')}"`;
-    }
-
-    function openImageModal(imgSrc) {
-        document.getElementById('modal-img').src = imgSrc;
-        document.getElementById('image-modal').style.display = 'flex';
-    }
-    function closeImageModal() {
-        document.getElementById('image-modal').style.display = 'none';
-        document.getElementById('modal-img').src = '';
-    }
-    function openCADModal() { document.getElementById('cad-modal').style.display = 'flex'; }
-    function closeCADModal() { document.getElementById('cad-modal').style.display = 'none'; }
-
-    function getFileNamePrefix() {
-        const title = sanitizeFileName(appData.eventTitle || '舞台リンクメモ');
-        return title || '舞台リンクメモ';
-    }
-
-    function isDirectLocalOpen() {
-        return location.protocol === 'file:' || location.protocol === 'content:';
-    }
-
-    function getPhotoStorageKey(id) { return `${PHOTO_KEY_PREFIX}${id}`; }
-
-    function collectPhotoIds(data = appData) {
-        const ids = [];
-        if (!data || !Array.isArray(data.tabs)) return ids;
-        data.tabs.forEach(tab => {
-            ids.push(`base-${tab.id}`);
-            (tab.cards || []).forEach(card => {
-                if (Array.isArray(card.photos)) {
-                    card.photos.forEach(p => ids.push(p.id));
-                } else {
-                    ids.push(card.id);
-                }
-            });
-        });
-        return ids;
-    }
-
-    async function loadPhotoFromStore(id) {
-        if (window.appPhotos[id]) return window.appPhotos[id];
-        if (typeof localforage === 'undefined') return null;
-        try {
-            const data = await localforage.getItem(getPhotoStorageKey(id));
-            if (typeof data === 'string' && data) {
-                window.appPhotos[id] = data;
-                return data;
-            }
-        } catch (e) {
-            console.error('写真読込失敗:', e);
+function getActiveTab() {
+    var active = null;
+    for (var i = 0; i < appData.tabs.length; i++) {
+        if (appData.tabs[i].id === appData.activeTabId) {
+            active = appData.tabs[i];
+            break;
         }
+    }
+    return active;
+}
+
+function findCardById(cardId) {
+    var tab = getActiveTab();
+    if (!tab) return null;
+    for (var i = 0; i < tab.cards.length; i++) {
+        if (tab.cards[i].id === cardId) return tab.cards[i];
+    }
+    return null;
+}
+
+function escapeHtml(value) {
+    return String(value == null ? "" : value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function sanitizeFileName(name) {
+    if (!name) return "";
+    return String(name).replace(/[\\/:*?"<>|]/g, "_").replace(/[\x00-\x1F\x7F]/g, "").trim();
+}
+
+function sanitizeCADText(value) {
+    return String(value == null ? "" : value).replace(/[\r\n\t]+/g, " ").replace(/'/g, "").replace(/\s+/g, " ").trim();
+}
+
+function escapeCSV(val) {
+    if (!val && val !== 0) return "";
+    var str = String(val).replace(/[\r\n]+/g, " ");
+    if (/^[=+\-@]/.test(str)) str = "'" + str;
+    return '"' + str.replace(/"/g, '""') + '"';
+}
+
+function getFileNamePrefix() {
+    var title = sanitizeFileName(appData.eventTitle || "舞台リンクメモ");
+    return title || "舞台リンクメモ";
+}
+
+function isDirectLocalOpen() {
+    return location.protocol === "file:" || location.protocol === "content:";
+}
+
+function getPhotoStorageKey(id) {
+    return PHOTO_KEY_PREFIX + id;
+}
+
+function collectPhotoIds() {
+    var ids = [];
+    for (var t = 0; t < appData.tabs.length; t++) {
+        var tab = appData.tabs[t];
+        ids.push("base-" + tab.id);
+        for (var c = 0; c < tab.cards.length; c++) {
+            var card = tab.cards[c];
+            if (Array.isArray(card.photos)) {
+                for (var p = 0; p < card.photos.length; p++) {
+                    if (card.photos[p] && card.photos[p].id) ids.push(card.photos[p].id);
+                }
+            }
+        }
+    }
+    return ids;
+}
+
+async function loadPhotoFromStore(id) {
+    if (window.appPhotos[id]) return window.appPhotos[id];
+    if (typeof localforage === "undefined") return null;
+    try {
+        var data = await localforage.getItem(getPhotoStorageKey(id));
+        if (typeof data === "string" && data) {
+            window.appPhotos[id] = data;
+            return data;
+        }
+    } catch (e) {
+        console.error("写真読込失敗:", e);
+    }
+    return null;
+}
+
+async function savePhotoToStore(id, base64Data) {
+    window.appPhotos[id] = base64Data;
+    if (typeof localforage === "undefined") return false;
+    try {
+        await localforage.setItem(getPhotoStorageKey(id), base64Data);
+        return true;
+    } catch (e) {
+        console.error("写真保存失敗:", e);
+        return false;
+    }
+}
+
+async function removePhotoFromStore(id) {
+    delete window.appPhotos[id];
+    if (typeof localforage === "undefined") return;
+    try {
+        await localforage.removeItem(getPhotoStorageKey(id));
+    } catch (e) {
+        console.error("写真削除失敗:", e);
+    }
+}
+
+async function preloadAllPhotos() {
+    var ids = collectPhotoIds();
+    for (var i = 0; i < ids.length; i++) {
+        await loadPhotoFromStore(ids[i]);
+    }
+}
+
+function countLoadedPhotos() {
+    return Object.keys(window.appPhotos).filter(function (id) { return !!window.appPhotos[id]; }).length;
+}
+
+async function checkPhotoStoreHealth() {
+    if (typeof localforage === "undefined") {
+        photoStoreHealth = false;
+        return false;
+    }
+    try {
+        var probeKey = PHOTO_KEY_PREFIX + "__probe__";
+        await localforage.setItem(probeKey, "ok");
+        var result = await localforage.getItem(probeKey);
+        await localforage.removeItem(probeKey);
+        photoStoreHealth = result === "ok";
+        return photoStoreHealth;
+    } catch (e) {
+        photoStoreHealth = false;
+        return false;
+    }
+}
+
+async function requestPersistentStorage() {
+    if (!navigator.storage || !navigator.storage.persist) {
+        storagePersistenceGranted = null;
         return null;
     }
+    try {
+        storagePersistenceGranted = await navigator.storage.persist();
+        return storagePersistenceGranted;
+    } catch (e) {
+        storagePersistenceGranted = null;
+        return null;
+    }
+}
 
-    async function savePhotoToStore(id, base64Data) {
-        window.appPhotos[id] = base64Data;
-        if (typeof localforage === 'undefined') return false;
+function updateStorageStatus(extraMessage) {
+    var card = document.getElementById("storage-status-card");
+    var text = document.getElementById("storage-status-text");
+    if (!card || !text) return;
+
+    card.classList.remove("warn", "error");
+    var messages = [];
+    var level = "ok";
+
+    if (extraMessage) messages.push(extraMessage);
+    if (isDirectLocalOpen()) {
+        messages.push("このHTMLを端末内から直接開いています。写真保存は不安定な場合がありますが、写真撮影自体は続けて試せます。");
+        level = "warn";
+    } else {
+        messages.push("HTTPSで開いていればホーム画面追加やオフライン起動が使いやすくなります。");
+    }
+
+    messages.push("現在の写真: " + countLoadedPhotos() + "枚");
+
+    if (photoStoreHealth === true) {
+        messages.push("写真保存領域: 利用可能");
+    } else if (photoStoreHealth === false) {
+        messages.push("写真保存領域: 利用できません");
+        level = "error";
+    } else {
+        messages.push("写真保存領域: 未確認");
+        if (level !== "error") level = "warn";
+    }
+
+    if (storagePersistenceGranted === true) {
+        messages.push("保存保持: 要求済み");
+    } else if (storagePersistenceGranted === false) {
+        messages.push("保存保持: 未許可");
+        if (level === "ok") level = "warn";
+    } else {
+        messages.push("保存保持: ブラウザ依存");
+    }
+
+    if (level === "warn") card.classList.add("warn");
+    if (level === "error") card.classList.add("error");
+    text.textContent = messages.join("\n");
+}
+
+async function migrateLegacyPhotosIfNeeded() {
+    if (typeof localforage === "undefined") return;
+    var legacyPhotos = null;
+    for (var i = 0; i < LEGACY_PHOTO_KEYS.length; i++) {
         try {
-            await localforage.setItem(getPhotoStorageKey(id), base64Data);
-            return true;
-        } catch (e) {
-            console.error('写真保存失敗:', e);
-            return false;
-        }
-    }
-
-    async function removePhotoFromStore(id) {
-        delete window.appPhotos[id];
-        if (typeof localforage === 'undefined') return;
-        try {
-            await localforage.removeItem(getPhotoStorageKey(id));
-        } catch (e) {
-            console.error('写真削除失敗:', e);
-        }
-    }
-
-    async function preloadAllPhotos() {
-        const ids = collectPhotoIds(appData);
-        for (const id of ids) {
-            await loadPhotoFromStore(id);
-        }
-    }
-
-    function countLoadedPhotos() {
-        return Object.keys(window.appPhotos).filter(id => !!window.appPhotos[id]).length;
-    }
-
-    async function checkPhotoStoreHealth() {
-        if (typeof localforage === 'undefined') {
-            photoStoreHealth = false;
-            return false;
-        }
-        const probeKey = `${PHOTO_KEY_PREFIX}__probe__`;
-        try {
-            await localforage.setItem(probeKey, 'ok');
-            const result = await localforage.getItem(probeKey);
-            await localforage.removeItem(probeKey);
-            photoStoreHealth = result === 'ok';
-            return photoStoreHealth;
-        } catch (e) {
-            console.error('写真保存領域確認失敗:', e);
-            photoStoreHealth = false;
-            return false;
-        }
-    }
-
-    async function requestPersistentStorage() {
-        if (!navigator.storage || !navigator.storage.persist) {
-            storagePersistenceGranted = null;
-            return null;
-        }
-        try {
-            storagePersistenceGranted = await navigator.storage.persist();
-            return storagePersistenceGranted;
-        } catch (e) {
-            console.error('永続保存要求失敗:', e);
-            storagePersistenceGranted = null;
-            return null;
-        }
-    }
-
-    function updateStorageStatus(extraMessage = '') {
-        const card = document.getElementById('storage-status-card');
-        const text = document.getElementById('storage-status-text');
-        if (!card || !text) return;
-        card.classList.remove('warn', 'error');
-
-        const messages = [];
-        let level = 'ok';
-        if (extraMessage) messages.push(extraMessage);
-
-        if (isDirectLocalOpen()) {
-            messages.push('このHTMLを端末内から直接開いています。写真保存は不安定な場合がありますが、写真撮影自体は続けて試せます。');
-            level = 'warn';
-        } else {
-            messages.push('HTTPSで開いていればホーム画面追加やオフライン起動が使いやすくなります。');
-        }
-
-        messages.push(`現在の写真: ${countLoadedPhotos()}枚`);
-
-        if (photoStoreHealth === true) {
-            messages.push('写真保存領域: 利用可能');
-        } else if (photoStoreHealth === false) {
-            messages.push('写真保存領域: 利用できません');
-            level = 'error';
-        } else {
-            messages.push('写真保存領域: 未確認');
-            if (level !== 'error') level = 'warn';
-        }
-
-        if (storagePersistenceGranted === true) {
-            messages.push('保存保持: 要求済み');
-        } else if (storagePersistenceGranted === false) {
-            messages.push('保存保持: 未許可');
-            if (level === 'ok') level = 'warn';
-        } else {
-            messages.push('保存保持: ブラウザ依存');
-        }
-
-        if (level === 'warn') card.classList.add('warn');
-        if (level === 'error') card.classList.add('error');
-        text.textContent = messages.join('\n');
-    }
-
-    async function migrateLegacyPhotosIfNeeded() {
-        if (typeof localforage === 'undefined') return;
-        let legacyPhotos = null;
-        for (const key of LEGACY_PHOTO_DB_KEYS) {
-            try {
-                const candidate = await localforage.getItem(key);
-                if (candidate && typeof candidate === 'object') {
-                    legacyPhotos = candidate;
-                    break;
-                }
-            } catch (e) {}
-        }
-        if (!legacyPhotos) return;
-
-        const normalized = { ...legacyPhotos };
-        if (normalized['base'] && appData.tabs[0] && !normalized[`base-${appData.tabs[0].id}`]) {
-            normalized[`base-${appData.tabs[0].id}`] = normalized['base'];
-        }
-        delete normalized['base'];
-
-        for (const [id, data] of Object.entries(normalized)) {
-            if (typeof data !== 'string' || !data.startsWith('data:image/')) continue;
-            const storageKey = getPhotoStorageKey(id);
-            const existing = await localforage.getItem(storageKey);
-            if (!existing) await localforage.setItem(storageKey, data);
-            window.appPhotos[id] = data;
-        }
-    }
-
-    function normalizeAppData(data) {
-        if (!data || !Array.isArray(data.tabs) || !data.tabs.length) {
-            return {
-                eventTitle: "",
-                tabs: [{ id: generateId(), name: "シーン1", usePosition: false, basePointDesc: "", cards: [createEmptyCardData()] }],
-                activeTabId: null
-            };
-        }
-        data.tabs.forEach(tab => {
-            if (typeof tab.usePosition !== 'boolean') tab.usePosition = false;
-            if (!Array.isArray(tab.cards)) tab.cards = [];
-            tab.cards.forEach(card => {
-                if (!Array.isArray(card.photos)) card.photos = [];
-                card.photos = card.photos.filter(Boolean).map(p => typeof p === 'string' ? { id: p } : p);
-            });
-        });
-        if (!data.activeTabId && data.tabs[0]) data.activeTabId = data.tabs[0].id;
-        return data;
-    }
-
-    function handleTypeChange(id) {
-        const typeSelect = document.getElementById(`typeSelect-${id}`);
-        const numSelect = document.getElementById(`numSelect-${id}`);
-        const customInput = document.getElementById(`recordCustom-${id}`);
-        if (!typeSelect || !numSelect || !customInput) return;
-
-        const selectedType = typeSelect.value;
-        if (selectedType === 'custom') {
-            numSelect.style.display = 'none';
-            numSelect.value = '';
-            customInput.style.display = 'block';
-        } else {
-            customInput.style.display = 'none';
-            if (selectedType && recordTypes[selectedType]) {
-                let numOptions = '<option value="">番号</option>';
-                for (let i = 1; i <= recordTypes[selectedType]; i++) {
-                    const nStr = String(i).padStart(2, '0');
-                    numOptions += `<option value="${nStr}">${nStr}</option>`;
-                }
-                numSelect.innerHTML = numOptions;
-                numSelect.style.display = 'block';
-            } else {
-                numSelect.innerHTML = '<option value="">番号</option>';
-                numSelect.style.display = 'block';
+            var candidate = await localforage.getItem(LEGACY_PHOTO_KEYS[i]);
+            if (candidate && typeof candidate === "object") {
+                legacyPhotos = candidate;
+                break;
             }
-            customInput.value = '';
+        } catch (e) {}
+    }
+    if (!legacyPhotos) return;
+
+    if (legacyPhotos["base"] && appData.tabs[0] && !legacyPhotos["base-" + appData.tabs[0].id]) {
+        legacyPhotos["base-" + appData.tabs[0].id] = legacyPhotos["base"];
+    }
+    delete legacyPhotos["base"];
+
+    var keys = Object.keys(legacyPhotos);
+    for (var k = 0; k < keys.length; k++) {
+        var id = keys[k];
+        var data = legacyPhotos[id];
+        if (typeof data !== "string" || data.indexOf("data:image/") !== 0) continue;
+        var storageKey = getPhotoStorageKey(id);
+        var existing = await localforage.getItem(storageKey);
+        if (!existing) await localforage.setItem(storageKey, data);
+        window.appPhotos[id] = data;
+    }
+}
+
+function normalizeAppData(data) {
+    if (!data || !Array.isArray(data.tabs) || data.tabs.length === 0) {
+        return {
+            eventTitle: "",
+            tabs: [{ id: generateId(), name: "シーン1", usePosition: false, basePointDesc: "", cards: [createEmptyCardData()] }],
+            activeTabId: null
+        };
+    }
+
+    for (var i = 0; i < data.tabs.length; i++) {
+        var tab = data.tabs[i];
+        if (typeof tab.usePosition !== "boolean") tab.usePosition = false;
+        if (!Array.isArray(tab.cards)) tab.cards = [];
+        for (var j = 0; j < tab.cards.length; j++) {
+            var card = tab.cards[j];
+            if (typeof card.hasPosition !== "boolean") card.hasPosition = false;
+            if (!Array.isArray(card.photos)) card.photos = [];
+            card.photos = card.photos.filter(Boolean).map(function (p) {
+                return typeof p === "string" ? { id: p } : p;
+            });
+        }
+        if (tab.cards.length === 0) tab.cards.push(createEmptyCardData());
+    }
+
+    if (!data.activeTabId && data.tabs[0]) data.activeTabId = data.tabs[0].id;
+    return data;
+}
+
+function makeRecordId(card) {
+    var baseId = "";
+    if (card.typeVal === "custom") {
+        baseId = card.customVal || "";
+    } else if (card.typeVal && card.numVal) {
+        baseId = card.typeVal + "ー" + card.numVal;
+    }
+    var tab = getActiveTab();
+    if (!tab) return baseId;
+    return (tab.name ? tab.name + "_" : "") + baseId;
+}
+
+function renderTabs() {
+    var tc = document.getElementById("tabs-container");
+    tc.innerHTML = "";
+
+    for (var i = 0; i < appData.tabs.length; i++) {
+        var tab = appData.tabs[i];
+        var btn = document.createElement("div");
+        btn.className = "tab-btn" + (tab.id === appData.activeTabId ? " active" : "");
+
+        var title = document.createElement("span");
+        title.style.marginRight = "8px";
+        title.textContent = tab.name;
+        title.onclick = (function (tabId) {
+            return function () { switchTab(tabId); };
+        })(tab.id);
+        btn.appendChild(title);
+
+        var edit = document.createElement("span");
+        edit.className = "tab-edit-icon";
+        edit.title = "名前変更";
+        edit.textContent = "✏️";
+        edit.onclick = (function (tabId) {
+            return function (e) { e.stopPropagation(); editTab(tabId); };
+        })(tab.id);
+        btn.appendChild(edit);
+
+        if (appData.tabs.length > 1) {
+            var del = document.createElement("span");
+            del.className = "tab-delete-icon";
+            del.style.color = "#d92d20";
+            del.textContent = "✖";
+            del.title = "削除";
+            del.onclick = (function (tabId) {
+                return function (e) { e.stopPropagation(); deleteTab(tabId); };
+            })(tab.id);
+            btn.appendChild(del);
+        }
+        tc.appendChild(btn);
+    }
+
+    var addBtn = document.createElement("div");
+    addBtn.className = "tab-add-btn";
+    addBtn.textContent = "＋ 追加";
+    addBtn.onclick = addTab;
+    tc.appendChild(addBtn);
+}
+
+function createBasePointElement(tab) {
+    var div = document.createElement("div");
+    div.className = "card base-point-card";
+    var baseId = "base-" + tab.id;
+
+    div.innerHTML =
+        '<div class="card-header"><span>📍 位置情報設定（タブ専用）</span></div>' +
+        '<div class="input-group">' +
+        '<label style="display:flex;align-items:center;gap:8px;">' +
+        '<input type="checkbox" id="use-position-' + tab.id + '"' + (tab.usePosition ? " checked" : "") + '>' +
+        '<span>位置情報を使う</span>' +
+        '</label>' +
+        '<div class="help-text">使う時だけ、0.0基準点の設定と各記録の座標入力を表示します。</div>' +
+        '</div>';
+
+    var toggle = div.querySelector("#use-position-" + tab.id);
+    toggle.onchange = function () {
+        saveData();
+        renderCards();
+    };
+
+    if (!tab.usePosition) return div;
+
+    var details = document.createElement("details");
+    details.className = "disclosure";
+    details.open = true;
+    details.innerHTML =
+        '<summary>0.0基準点の詳細を表示</summary>' +
+        '<div class="disclosure-body">' +
+        '<div class="input-group">' +
+        '<label>0.0基準点の説明・位置</label>' +
+        '<input type="text" id="base-point-desc-' + tab.id + '" placeholder="例: 舞台センター奥の釘、など自由に記述" value="' + escapeHtml(tab.basePointDesc || "") + '">' +
+        '</div>' +
+        '<div class="input-group">' +
+        '<input type="file" accept="image/*" capture="environment" id="photo-' + baseId + '" style="display:none;">' +
+        '<button type="button" class="camera-btn" id="cameraBtn-' + baseId + '">📷 基準点の写真を選択/撮影</button>' +
+        '<img id="preview-' + baseId + '" class="photo-preview" alt="基準点の写真">' +
+        '<button type="button" class="photo-delete-btn" id="deletePhotoBtn-' + baseId + '" style="display:none;">🗑️ 写真を削除</button>' +
+        '</div>' +
+        '</div>';
+    div.appendChild(details);
+
+    var descInput = details.querySelector("#base-point-desc-" + tab.id);
+    descInput.onchange = saveData;
+    var fileInput = details.querySelector("#photo-" + baseId);
+    var camBtn = details.querySelector("#cameraBtn-" + baseId);
+    var preview = details.querySelector("#preview-" + baseId);
+    var delBtn = details.querySelector("#deletePhotoBtn-" + baseId);
+
+    fileInput.onchange = function (event) { handleBasePhoto(event, baseId); };
+    camBtn.onclick = function () { fileInput.click(); };
+    preview.onclick = function () { openImageModal(preview.src); };
+    delBtn.onclick = function () { removeBasePhoto(baseId); };
+
+    setTimeout(function () {
+        if (window.appPhotos[baseId]) {
+            preview.src = window.appPhotos[baseId];
+            preview.style.display = "block";
+            camBtn.classList.add("has-photo");
+            camBtn.textContent = "✅ 写真撮影済み（タップで撮り直し）";
+            delBtn.style.display = "block";
+        }
+    }, 0);
+
+    return div;
+}
+
+function createCardElement(card) {
+    var div = document.createElement("div");
+    div.className = "card record-card" + (card.isLocked ? " is-locked" : "");
+    div.setAttribute("data-id", card.id);
+
+    var typeOptions = '<option value="">項目IDを選択</option>';
+    Object.keys(RECORD_TYPES).forEach(function (key) {
+        var display = ["CM250", "CM500", "SL"].indexOf(key) >= 0 ? key + " -" : key;
+        typeOptions += '<option value="' + escapeHtml(key) + '"' + (card.typeVal === key ? " selected" : "") + '>' + escapeHtml(display) + "</option>";
+    });
+    typeOptions += '<option value="custom"' + (card.typeVal === "custom" ? " selected" : "") + ">✍️ 任意入力</option>";
+
+    var numOptions = '<option value="">番号</option>';
+    if (RECORD_TYPES[card.typeVal] && card.typeVal !== "custom") {
+        for (var i = 1; i <= RECORD_TYPES[card.typeVal]; i++) {
+            var nStr = String(i).padStart(2, "0");
+            numOptions += '<option value="' + nStr + '"' + (card.numVal === nStr ? " selected" : "") + ">" + nStr + "</option>";
+        }
+    }
+
+    var html = '';
+    html += '<div class="card-header"><span>記録</span><div class="header-actions"></div></div>';
+    html += '<div class="input-group">';
+    html += '<label>項目ID</label>';
+    html += '<div class="help-text">項目IDを選択。種類を選ぶと番号を選べます。任意入力もできます。</div>';
+    html += '<div class="type-row" style="margin-top:8px;">';
+    html += '<select id="typeSelect-' + card.id + '"' + (card.isLocked ? " disabled" : "") + '>' + typeOptions + '</select>';
+    html += '<select id="numSelect-' + card.id + '" style="display:' + (card.typeVal === "custom" ? "none" : "block") + ';"' + (card.isLocked ? " disabled" : "") + '>' + numOptions + '</select>';
+    html += '</div>';
+    html += '<div style="margin-top:8px;"><input type="text" id="recordCustom-' + card.id + '" style="display:' + (card.typeVal === "custom" ? "block" : "none") + ';" placeholder="任意の記録ID" value="' + escapeHtml(card.customVal || "") + '"' + (card.isLocked ? " disabled" : "") + '></div>';
+    html += '</div>';
+
+    html += '<div class="input-group"><label>対象名</label><input type="text" id="name-' + card.id + '" placeholder="対象名を入力" value="' + escapeHtml(card.name || "") + '"' + (card.isLocked ? " disabled" : "") + '></div>';
+
+    if (getActiveTab() && getActiveTab().usePosition) {
+        html += '<details class="disclosure"' + (card.hasPosition ? " open" : "") + '>';
+        html += '<summary>座標を追加する</summary>';
+        html += '<div class="disclosure-body">';
+        html += '<div class="input-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="hasPosition-' + card.id + '"' + (card.hasPosition ? " checked" : "") + (card.isLocked ? " disabled" : "") + '><span>この記録に座標を付ける</span></label></div>';
+        if (card.hasPosition) {
+            html += '<div class="input-group"><label>X距離（基本は舞台のセンターから）</label><div class="flex-row">';
+            html += '<select id="dirX-' + card.id + '"' + (card.isLocked ? " disabled" : "") + '>';
+            html += '<option value=""' + (card.dirX === "" ? " selected" : "") + '>選択</option>';
+            html += '<option value="上手"' + (card.dirX === "上手" ? " selected" : "") + '>上手</option>';
+            html += '<option value="下手"' + (card.dirX === "下手" ? " selected" : "") + '>下手</option>';
+            html += '<option value="センター"' + (card.dirX === "センター" ? " selected" : "") + '>センター</option>';
+            html += '</select>';
+            html += '<span class="unit dist-x-parts-' + card.id + '" style="display:' + (card.dirX === "センター" ? "none" : "") + ';">へ</span>';
+            html += '<input type="number" id="distX-' + card.id + '" class="dist-x-parts-' + card.id + '" style="display:' + (card.dirX === "センター" ? "none" : "block") + ';" placeholder="0" value="' + escapeHtml(card.distX || "") + '"' + (card.isLocked ? " disabled" : "") + '>';
+            html += '<span class="unit dist-x-parts-' + card.id + '" style="display:' + (card.dirX === "センター" ? "none" : "") + ';">mm</span>';
+            html += '</div></div>';
+
+            html += '<div class="input-group"><label>Y距離（基本は舞台前から）</label><div class="flex-row">';
+            html += '<select id="dirY-' + card.id + '"' + (card.isLocked ? " disabled" : "") + '>';
+            html += '<option value="奥"' + ((card.dirY === "奥" || card.dirY === "") ? " selected" : "") + '>奥</option>';
+            html += '<option value="前"' + (card.dirY === "前" ? " selected" : "") + '>前</option>';
+            html += '</select>';
+            html += '<span class="unit">へ</span>';
+            html += '<input type="number" id="distY-' + card.id + '" placeholder="0" value="' + escapeHtml(card.distY || "") + '"' + (card.isLocked ? " disabled" : "") + '>';
+            html += '<span class="unit">mm</span></div></div>';
+        }
+        html += '</div></details>';
+    }
+
+    html += '<div class="input-group"><label>備考</label><textarea id="note-' + card.id + '"' + (card.isLocked ? " disabled" : "") + '>' + escapeHtml(card.note || "") + '</textarea></div>';
+
+    html += '<div class="input-group">';
+    html += '<label>記録写真（最大' + MAX_RECORD_PHOTOS + '枚）</label>';
+    html += '<input type="file" accept="image/*" capture="environment" id="photo-' + card.id + '" style="display:none;"' + (card.isLocked ? " disabled" : "") + '>';
+    html += '<button type="button" class="camera-btn" id="cameraBtn-' + card.id + '"' + (card.isLocked ? " disabled" : "") + '>📷 記録写真を追加</button>';
+    html += '<div class="help-text">全景・寄り・別角度などを1件にまとめて保存できます。</div>';
+    html += '<div class="photo-grid" id="photoList-' + card.id + '"></div>';
+    html += '</div>';
+
+    html += '<div class="record-footer-actions">';
+    html += '<button type="button" class="lock-btn ' + (card.isLocked ? "locked-state" : "") + '" id="lockBtn-' + card.id + '">' + (card.isLocked ? "🔒 解除" : "🔓 ロック") + '</button>';
+    html += '<button type="button" class="delete-btn" id="deleteBtn-' + card.id + '"' + (card.isLocked ? " disabled" : "") + '>削除</button>';
+    html += '</div>';
+
+    div.innerHTML = html;
+
+    var typeSel = div.querySelector("#typeSelect-" + card.id);
+    var numSel = div.querySelector("#numSelect-" + card.id);
+    var customInput = div.querySelector("#recordCustom-" + card.id);
+    var nameInput = div.querySelector("#name-" + card.id);
+    var noteInput = div.querySelector("#note-" + card.id);
+    var fileInput = div.querySelector("#photo-" + card.id);
+    var camBtn = div.querySelector("#cameraBtn-" + card.id);
+    var lockBtn = div.querySelector("#lockBtn-" + card.id);
+    var deleteBtn = div.querySelector("#deleteBtn-" + card.id);
+
+    typeSel.onchange = function () { handleTypeChange(card.id); };
+    if (numSel) numSel.onchange = saveData;
+    if (customInput) customInput.onchange = saveData;
+    if (nameInput) nameInput.onchange = saveData;
+    if (noteInput) noteInput.onchange = saveData;
+    if (fileInput) fileInput.onchange = function (event) { handleRecordPhoto(event, card.id); };
+    if (camBtn) camBtn.onclick = function () { fileInput.click(); };
+    if (lockBtn) lockBtn.onclick = function () { toggleLock(card.id); };
+    if (deleteBtn) deleteBtn.onclick = function () { removeCard(card.id); };
+
+    var hasPos = div.querySelector("#hasPosition-" + card.id);
+    if (hasPos) {
+        hasPos.onchange = function () {
+            saveData();
+            renderCards();
+        };
+    }
+    var dirX = div.querySelector("#dirX-" + card.id);
+    if (dirX) {
+        dirX.onchange = function () {
+            toggleDistX(card.id);
+            saveData();
+        };
+    }
+    var dirY = div.querySelector("#dirY-" + card.id);
+    if (dirY) dirY.onchange = saveData;
+    var distX = div.querySelector("#distX-" + card.id);
+    if (distX) distX.onchange = saveData;
+    var distY = div.querySelector("#distY-" + card.id);
+    if (distY) distY.onchange = saveData;
+
+    setTimeout(async function () {
+        var photoList = div.querySelector("#photoList-" + card.id);
+        if (!photoList) return;
+        var photos = Array.isArray(card.photos) ? card.photos : [];
+        if (photos.length > 0) camBtn.classList.add("has-photo");
+
+        for (var i = 0; i < photos.length; i++) {
+            var photoMeta = photos[i];
+            var data = await loadPhotoFromStore(photoMeta.id);
+            if (!data) continue;
+
+            var wrap = document.createElement("div");
+            wrap.className = "photo-item";
+
+            var img = document.createElement("img");
+            img.src = data;
+            img.className = "photo-preview";
+            img.style.display = "block";
+            img.alt = "記録写真";
+            img.onclick = (function (src) {
+                return function () { openImageModal(src); };
+            })(data);
+
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "photo-delete-btn";
+            btn.textContent = "🗑️ この写真を削除";
+            btn.disabled = card.isLocked;
+            btn.onclick = (function (cardId, photoId) {
+                return function () { removeRecordPhoto(cardId, photoId); };
+            })(card.id, photoMeta.id);
+
+            wrap.appendChild(img);
+            wrap.appendChild(btn);
+            photoList.appendChild(wrap);
+        }
+    }, 0);
+
+    return div;
+}
+
+function renderCards() {
+    var appDiv = document.getElementById("app");
+    appDiv.innerHTML = "";
+    var activeTab = getActiveTab();
+    if (!activeTab) return;
+
+    appDiv.appendChild(createBasePointElement(activeTab));
+    for (var i = 0; i < activeTab.cards.length; i++) {
+        appDiv.appendChild(createCardElement(activeTab.cards[i]));
+    }
+}
+
+function handleTypeChange(id) {
+    var typeSelect = document.getElementById("typeSelect-" + id);
+    var numSelect = document.getElementById("numSelect-" + id);
+    var customInput = document.getElementById("recordCustom-" + id);
+    if (!typeSelect || !numSelect || !customInput) return;
+
+    var selectedType = typeSelect.value;
+    if (selectedType === "custom") {
+        numSelect.style.display = "none";
+        numSelect.value = "";
+        customInput.style.display = "block";
+    } else {
+        customInput.style.display = "none";
+        if (selectedType && RECORD_TYPES[selectedType]) {
+            var numOptions = '<option value="">番号</option>';
+            for (var i = 1; i <= RECORD_TYPES[selectedType]; i++) {
+                var nStr = String(i).padStart(2, "0");
+                numOptions += '<option value="' + nStr + '">' + nStr + "</option>";
+            }
+            numSelect.innerHTML = numOptions;
+            numSelect.style.display = "block";
+        } else {
+            numSelect.innerHTML = '<option value="">番号</option>';
+            numSelect.style.display = "block";
+        }
+        customInput.value = "";
+    }
+    saveData();
+}
+
+function toggleDistX(id) {
+    var dirXSel = document.getElementById("dirX-" + id);
+    var parts = document.querySelectorAll(".dist-x-parts-" + id);
+    if (!dirXSel) return;
+    var hide = dirXSel.value === "センター";
+    parts.forEach(function (el) {
+        el.style.display = hide ? "none" : (el.tagName === "INPUT" ? "block" : "");
+    });
+    if (hide) {
+        var distInput = document.getElementById("distX-" + id);
+        if (distInput) distInput.value = "";
+    }
+}
+
+function fileToDataURL(file) {
+    return new Promise(function (resolve, reject) {
+        try {
+            var reader = new FileReader();
+            reader.onload = function () { resolve(reader.result); };
+            reader.onerror = function () { reject(new Error("写真ファイルの読み込みに失敗しました。")); };
+            reader.onabort = function () { reject(new Error("写真ファイルの読み込みが中断されました。")); };
+            reader.readAsDataURL(file);
+        } catch (e) {
+            reject(e);
+        }
+    });
+}
+
+function compressImage(file, maxWidth, maxHeight, quality) {
+    return new Promise(function (resolve) {
+        var reader = new FileReader();
+        reader.onload = function (event) {
+            var img = new Image();
+            img.onload = function () {
+                var width = img.width;
+                var height = img.height;
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+                } else if (height > maxHeight) {
+                    width = Math.round((width * maxHeight) / height);
+                    height = maxHeight;
+                }
+                var canvas = document.createElement("canvas");
+                canvas.width = width;
+                canvas.height = height;
+                var ctx = canvas.getContext("2d");
+                if (!ctx) return resolve(null);
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL("image/jpeg", quality));
+            };
+            img.onerror = function () { resolve(null); };
+            img.src = event.target.result;
+        };
+        reader.onerror = function () { resolve(null); };
+        reader.readAsDataURL(file);
+    });
+}
+
+async function handleBasePhoto(event, id) {
+    var file = event.target.files[0];
+    if (!file) return;
+
+    var cameraBtn = document.getElementById("cameraBtn-" + id);
+    var preview = document.getElementById("preview-" + id);
+    var delBtn = document.getElementById("deletePhotoBtn-" + id);
+
+    if (cameraBtn) cameraBtn.innerHTML = "⏳ 写真を処理中...";
+    try {
+        var rawData = await fileToDataURL(file);
+        var compressedData = await compressImage(file, 1200, 1200, 0.7);
+        var dataToStore = compressedData && compressedData.length < rawData.length ? compressedData : rawData;
+        var saved = await savePhotoToStore(id, dataToStore);
+
+        if (preview) {
+            preview.src = dataToStore;
+            preview.style.display = "block";
+        }
+        if (delBtn) delBtn.style.display = "block";
+        if (cameraBtn) {
+            cameraBtn.classList.add("has-photo");
+            cameraBtn.innerHTML = saved ? "✅ 写真撮影済み（タップで撮り直し）" : "⚠️ 一時表示中（保存未完了）";
         }
         saveData();
-    }
-
-    function toggleDistX(id) {
-        const dirXSel = document.getElementById(`dirX-${id}`);
-        const parts = document.querySelectorAll(`.dist-x-parts-${id}`);
-        if (!dirXSel) return;
-        const hide = dirXSel.value === 'センター';
-        parts.forEach(el => {
-            el.style.display = hide ? 'none' : (el.tagName === 'INPUT' ? 'block' : '');
-        });
-        if (hide) {
-            const distInput = document.getElementById(`distX-${id}`);
-            if (distInput) distInput.value = '';
+        updateStorageStatus(saved ? "写真を保存しました。" : "写真は画面表示のみで、保存が完了していません。");
+    } catch (error) {
+        console.error(error);
+        if (cameraBtn) {
+            cameraBtn.classList.remove("has-photo");
+            cameraBtn.innerHTML = "📷 基準点の写真を選択/撮影";
         }
+        alert("写真の読み込みに失敗しました。");
+    } finally {
+        event.target.value = "";
+    }
+}
+
+async function handleRecordPhoto(event, cardId) {
+    var file = event.target.files[0];
+    if (!file) return;
+    var card = findCardById(cardId);
+    if (!card) return;
+
+    if (!Array.isArray(card.photos)) card.photos = [];
+    if (card.photos.length >= MAX_RECORD_PHOTOS) {
+        alert("写真は1件につき" + MAX_RECORD_PHOTOS + "枚までです。");
+        event.target.value = "";
+        return;
     }
 
-    function fileToDataURL(file) {
-        return new Promise((resolve, reject) => {
-            try {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = () => reject(new Error('写真ファイルの読み込みに失敗しました。'));
-                reader.onabort = () => reject(new Error('写真ファイルの読み込みが中断されました。'));
-                reader.readAsDataURL(file);
-            } catch (e) {
-                reject(e);
-            }
-        });
-    }
-
-    function compressImage(file, maxWidth, maxHeight, quality) {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const img = new Image();
-                img.onload = function() {
-                    let width = img.width;
-                    let height = img.height;
-                    if (width > height) {
-                        if (width > maxWidth) {
-                            height = Math.round((height * maxWidth) / width);
-                            width = maxWidth;
-                        }
-                    } else {
-                        if (height > maxHeight) {
-                            width = Math.round((width * maxHeight) / height);
-                            height = maxHeight;
-                        }
-                    }
-                    const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    if (!ctx) return resolve(null);
-                    ctx.drawImage(img, 0, 0, width, height);
-                    resolve(canvas.toDataURL('image/jpeg', quality));
-                };
-                img.onerror = () => resolve(null);
-                img.src = event.target.result;
-            };
-            reader.onerror = () => resolve(null);
-            reader.readAsDataURL(file);
-        });
-    }
-
-    function getActiveTab() {
-        return appData.tabs.find(t => t.id === appData.activeTabId);
-    }
-
-    function getCardById(cardId) {
-        return getActiveTab()?.cards.find(c => c.id === cardId);
-    }
-
-    async function handleBasePhoto(event, id) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const cameraBtn = document.getElementById(`cameraBtn-${id}`);
-        const preview = document.getElementById(`preview-${id}`);
-        const delBtn = document.getElementById(`deletePhotoBtn-${id}`);
-        if (cameraBtn) cameraBtn.innerHTML = '⏳ 写真を処理中...';
-
-        try {
-            const rawData = await fileToDataURL(file);
-            const compressedData = await compressImage(file, 1200, 1200, 0.7);
-            const dataToStore = (compressedData && compressedData.length < rawData.length) ? compressedData : rawData;
-            const saved = await savePhotoToStore(id, dataToStore);
-
-            if (preview) {
-                preview.src = dataToStore;
-                preview.style.display = 'block';
-            }
-            if (delBtn) delBtn.style.display = 'block';
-            if (cameraBtn) {
-                cameraBtn.classList.add('has-photo');
-                cameraBtn.innerHTML = saved ? '✅ 写真撮影済み（タップで撮り直し）' : '⚠️ 一時表示中（保存未完了）';
-            }
-            saveData();
-            updateStorageStatus(saved ? '写真を保存しました。' : '写真は画面表示のみで、保存が完了していません。');
-        } catch (error) {
-            console.error(error);
-            if (cameraBtn) {
-                cameraBtn.classList.remove('has-photo');
-                cameraBtn.innerHTML = '📷 基準点の写真を選択/撮影';
-            }
-            alert('写真の読み込みに失敗しました。');
-        } finally {
-            event.target.value = '';
-        }
-    }
-
-    async function handleRecordPhoto(event, cardId) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const card = getCardById(cardId);
-        if (!card) return;
-
-        if (!Array.isArray(card.photos)) card.photos = [];
-        if (card.photos.length >= MAX_RECORD_PHOTOS) {
-            alert(`写真は1件につき${MAX_RECORD_PHOTOS}枚までです。`);
-            event.target.value = '';
+    try {
+        var rawData = await fileToDataURL(file);
+        var compressedData = await compressImage(file, 1200, 1200, 0.7);
+        var dataToStore = compressedData && compressedData.length < rawData.length ? compressedData : rawData;
+        var photoId = cardId + "_photo_" + Date.now();
+        var saved = await savePhotoToStore(photoId, dataToStore);
+        if (!saved) {
+            alert("写真の保存に失敗しました。");
+            event.target.value = "";
             return;
         }
 
-        try {
-            const rawData = await fileToDataURL(file);
-            const compressedData = await compressImage(file, 1200, 1200, 0.7);
-            const dataToStore = (compressedData && compressedData.length < rawData.length) ? compressedData : rawData;
-
-            const photoId = `${cardId}_photo_${Date.now()}`;
-            const saved = await savePhotoToStore(photoId, dataToStore);
-            if (!saved) {
-                alert('写真の保存に失敗しました。');
-                event.target.value = '';
-                return;
-            }
-
-            card.photos.push({ id: photoId });
-            saveData();
-            renderCards();
-            updateStorageStatus('写真を保存しました。');
-        } catch (error) {
-            console.error(error);
-            alert('写真の読み込みに失敗しました。');
-        } finally {
-            event.target.value = '';
-        }
-    }
-
-    async function removeRecordPhoto(cardId, photoId) {
-        if (!confirm('この写真を削除しますか？')) return;
-        const card = getCardById(cardId);
-        if (!card || !Array.isArray(card.photos)) return;
-        card.photos = card.photos.filter(p => p.id !== photoId);
-        await removePhotoFromStore(photoId);
+        card.photos.push({ id: photoId });
         saveData();
         renderCards();
-        updateStorageStatus('写真を削除しました。');
+        updateStorageStatus("写真を保存しました。");
+    } catch (error) {
+        console.error(error);
+        alert("写真の読み込みに失敗しました。");
+    } finally {
+        event.target.value = "";
     }
+}
 
-    function syncDOMtoData() {
-        const eventTitleEl = document.getElementById('event-title');
-        if (eventTitleEl) appData.eventTitle = eventTitleEl.value;
+async function removeRecordPhoto(cardId, photoId) {
+    if (!confirm("この写真を削除しますか？")) return;
+    var card = findCardById(cardId);
+    if (!card || !Array.isArray(card.photos)) return;
+    card.photos = card.photos.filter(function (p) { return p.id !== photoId; });
+    await removePhotoFromStore(photoId);
+    saveData();
+    renderCards();
+    updateStorageStatus("写真を削除しました。");
+}
 
-        const activeTab = getActiveTab();
-        if (!activeTab) return;
+async function removeBasePhoto(id) {
+    if (!confirm("撮影した写真を削除しますか？")) return;
+    await removePhotoFromStore(id);
 
-        const usePositionEl = document.getElementById(`use-position-${activeTab.id}`);
-        if (usePositionEl) activeTab.usePosition = usePositionEl.checked;
-
-        const baseDescEl = document.getElementById(`base-point-desc-${activeTab.id}`);
-        if (baseDescEl) activeTab.basePointDesc = baseDescEl.value;
-
-        const cardEls = document.querySelectorAll('#app .record-card');
-        const updatedCards = [];
-        cardEls.forEach(el => {
-            const id = el.getAttribute('data-id');
-            const prev = activeTab.cards.find(c => c.id === id) || {};
-            const typeSel = document.getElementById(`typeSelect-${id}`);
-            const numSel = document.getElementById(`numSelect-${id}`);
-            const customInput = document.getElementById(`recordCustom-${id}`);
-            const nameInput = document.getElementById(`name-${id}`);
-            const dirXSel = document.getElementById(`dirX-${id}`);
-            const distXInput = document.getElementById(`distX-${id}`);
-            const dirYSel = document.getElementById(`dirY-${id}`);
-            const distYInput = document.getElementById(`distY-${id}`);
-            const noteInput = document.getElementById(`note-${id}`);
-
-            if (typeSel) {
-                updatedCards.push({
-                    id,
-                    typeVal: typeSel.value,
-                    numVal: numSel ? numSel.value : "",
-                    customVal: customInput ? customInput.value : "",
-                    name: nameInput ? nameInput.value : "",
-                    dirX: dirXSel ? dirXSel.value : "",
-                    distX: distXInput ? distXInput.value : "",
-                    dirY: dirYSel ? dirYSel.value : "奥",
-                    distY: distYInput ? distYInput.value : "",
-                    note: noteInput ? noteInput.value : "",
-                    isLocked: el.classList.contains('is-locked'),
-                    photos: Array.isArray(prev.photos) ? prev.photos : []
-                });
-            }
-        });
-        activeTab.cards = updatedCards;
+    var preview = document.getElementById("preview-" + id);
+    if (preview) {
+        preview.src = "";
+        preview.style.display = "none";
     }
-
-    function saveData() {
-        syncDOMtoData();
-        localStorage.setItem(SAVE_KEY, JSON.stringify(appData));
+    var deleteBtn = document.getElementById("deletePhotoBtn-" + id);
+    if (deleteBtn) deleteBtn.style.display = "none";
+    var cameraBtn = document.getElementById("cameraBtn-" + id);
+    if (cameraBtn) {
+        cameraBtn.classList.remove("has-photo");
+        cameraBtn.textContent = "📷 基準点の写真を選択/撮影";
     }
+    saveData();
+    updateStorageStatus("写真を削除しました。");
+}
 
-    async function resetData() {
-        if (!confirm("すべてのタブ、データ、写真を消去して初期状態に戻しますか？\n※取り消せません。")) return;
-        localStorage.removeItem(SAVE_KEY);
-        if (typeof localforage !== 'undefined') {
-            for (const id of collectPhotoIds(appData)) {
-                await removePhotoFromStore(id);
-            }
-            for (const key of LEGACY_PHOTO_DB_KEYS) {
-                try { await localforage.removeItem(key); } catch(e) {}
+function syncDOMtoData() {
+    var eventTitleEl = document.getElementById("event-title");
+    if (eventTitleEl) appData.eventTitle = eventTitleEl.value;
+
+    var activeTab = getActiveTab();
+    if (!activeTab) return;
+
+    var usePositionEl = document.getElementById("use-position-" + activeTab.id);
+    if (usePositionEl) activeTab.usePosition = usePositionEl.checked;
+    var baseDescEl = document.getElementById("base-point-desc-" + activeTab.id);
+    if (baseDescEl) activeTab.basePointDesc = baseDescEl.value;
+
+    var cardEls = document.querySelectorAll("#app .record-card");
+    var updatedCards = [];
+    cardEls.forEach(function (el) {
+        var id = el.getAttribute("data-id");
+        var prev = findCardById(id) || { photos: [] };
+
+        var typeSel = document.getElementById("typeSelect-" + id);
+        var numSel = document.getElementById("numSelect-" + id);
+        var customInput = document.getElementById("recordCustom-" + id);
+        var nameInput = document.getElementById("name-" + id);
+        var hasPositionEl = document.getElementById("hasPosition-" + id);
+        var dirXSel = document.getElementById("dirX-" + id);
+        var distXInput = document.getElementById("distX-" + id);
+        var dirYSel = document.getElementById("dirY-" + id);
+        var distYInput = document.getElementById("distY-" + id);
+        var noteInput = document.getElementById("note-" + id);
+
+        if (typeSel) {
+            updatedCards.push({
+                id: id,
+                typeVal: typeSel.value,
+                numVal: numSel ? numSel.value : "",
+                customVal: customInput ? customInput.value : "",
+                name: nameInput ? nameInput.value : "",
+                hasPosition: hasPositionEl ? hasPositionEl.checked : false,
+                dirX: dirXSel ? dirXSel.value : "",
+                distX: distXInput ? distXInput.value : "",
+                dirY: dirYSel ? dirYSel.value : "奥",
+                distY: distYInput ? distYInput.value : "",
+                note: noteInput ? noteInput.value : "",
+                isLocked: el.classList.contains("is-locked"),
+                photos: Array.isArray(prev.photos) ? prev.photos : []
+            });
+        }
+    });
+    activeTab.cards = updatedCards;
+}
+
+function saveData() {
+    syncDOMtoData();
+    localStorage.setItem(SAVE_KEY, JSON.stringify(appData));
+}
+
+async function resetData() {
+    if (!confirm("すべてのタブ、データ、写真を消去して初期状態に戻しますか？\n※取り消せません。")) return;
+    localStorage.removeItem(SAVE_KEY);
+    if (typeof localforage !== "undefined") {
+        var ids = collectPhotoIds();
+        for (var i = 0; i < ids.length; i++) await removePhotoFromStore(ids[i]);
+        for (var j = 0; j < LEGACY_PHOTO_KEYS.length; j++) {
+            try { await localforage.removeItem(LEGACY_PHOTO_KEYS[j]); } catch (e) {}
+        }
+    }
+    location.reload();
+}
+
+function switchTab(tabId) {
+    if (appData.activeTabId === tabId) return;
+    syncDOMtoData();
+    appData.activeTabId = tabId;
+    renderTabs();
+    renderCards();
+    updateStorageStatus();
+}
+
+function addTab() {
+    syncDOMtoData();
+    var name = prompt("新しいタブの名前を入力してください", "シーン" + (appData.tabs.length + 1));
+    if (!name) return;
+    var newTab = { id: generateId(), name: name.trim(), usePosition: false, basePointDesc: "", cards: [createEmptyCardData()] };
+    appData.tabs.push(newTab);
+    appData.activeTabId = newTab.id;
+    renderTabs();
+    renderCards();
+    saveData();
+    updateStorageStatus();
+}
+
+function editTab(tabId) {
+    var tab = appData.tabs.find(function (t) { return t.id === tabId; });
+    var newName = prompt("タブの名前を変更", tab.name);
+    if (newName && newName.trim() !== "") {
+        tab.name = newName.trim();
+        renderTabs();
+        saveData();
+    }
+}
+
+async function deleteTab(tabId) {
+    if (appData.tabs.length <= 1) return;
+    var tab = appData.tabs.find(function (t) { return t.id === tabId; });
+    if (!confirm("タブ「" + tab.name + "」とその中のデータをすべて削除しますか？")) return;
+
+    await removePhotoFromStore("base-" + tabId);
+    for (var i = 0; i < tab.cards.length; i++) {
+        var card = tab.cards[i];
+        if (Array.isArray(card.photos)) {
+            for (var p = 0; p < card.photos.length; p++) {
+                await removePhotoFromStore(card.photos[p].id);
             }
         }
-        location.reload();
     }
 
-    async function loadData() {
-        let saved = localStorage.getItem(SAVE_KEY);
+    appData.tabs = appData.tabs.filter(function (t) { return t.id !== tabId; });
+    if (appData.activeTabId === tabId) appData.activeTabId = appData.tabs[0].id;
+    renderTabs();
+    renderCards();
+    saveData();
+    updateStorageStatus("タブと関連写真を削除しました。");
+}
+
+function addCard(prefillType, prefillNum) {
+    syncDOMtoData();
+    var activeTab = getActiveTab();
+    if (!activeTab) return;
+    activeTab.cards.push(createEmptyCardData(prefillType, prefillNum));
+    renderCards();
+    saveData();
+    updateStorageStatus();
+}
+
+function addSimilarCard() {
+    syncDOMtoData();
+    var activeTab = getActiveTab();
+    if (!activeTab || activeTab.cards.length === 0) { addCard("", ""); return; }
+
+    var lastCard = activeTab.cards[activeTab.cards.length - 1];
+    if (!lastCard.typeVal || lastCard.typeVal === "custom") { addCard(lastCard.typeVal || "", ""); return; }
+
+    var nextNumInt = lastCard.numVal ? parseInt(lastCard.numVal, 10) + 1 : 1;
+    var maxNum = RECORD_TYPES[lastCard.typeVal];
+    if (nextNumInt > maxNum) {
+        alert(lastCard.typeVal + "は" + maxNum + "番までです。新しい枠のみ追加します。");
+        addCard(lastCard.typeVal, "");
+    } else {
+        addCard(lastCard.typeVal, String(nextNumInt).padStart(2, "0"));
+    }
+    setTimeout(function () {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    }, 50);
+}
+
+function toggleLock(id) {
+    syncDOMtoData();
+    var card = findCardById(id);
+    if (!card) return;
+    card.isLocked = !card.isLocked;
+    renderCards();
+    saveData();
+}
+
+async function removeCard(id) {
+    var activeTab = getActiveTab();
+    if (!activeTab) return;
+    syncDOMtoData();
+    var card = findCardById(id);
+    if (card && Array.isArray(card.photos)) {
+        for (var i = 0; i < card.photos.length; i++) {
+            await removePhotoFromStore(card.photos[i].id);
+        }
+    }
+    activeTab.cards = activeTab.cards.filter(function (c) { return c.id !== id; });
+    if (activeTab.cards.length === 0) activeTab.cards.push(createEmptyCardData());
+    renderCards();
+    saveData();
+    updateStorageStatus("記録と関連写真を削除しました。");
+}
+
+async function exportZIP() {
+    if (typeof JSZip === "undefined") {
+        alert("ZIP保存に必要なライブラリの読み込みに失敗しました。");
+        return;
+    }
+    syncDOMtoData();
+    await preloadAllPhotos();
+
+    var hasAnyData = false;
+    appData.tabs.forEach(function (t) {
+        if (t.cards.length > 0 || t.basePointDesc || window.appPhotos["base-" + t.id]) hasAnyData = true;
+    });
+    if (!hasAnyData) {
+        alert("データがありません。");
+        return;
+    }
+
+    var overlay = document.getElementById("loading-overlay");
+    overlay.innerHTML = "ZIPデータをまとめています...📦<br>しばらくお待ちください";
+    overlay.style.display = "flex";
+
+    try {
+        var zip = new JSZip();
+        var csvContent = "\uFEFF";
+        var fileNamePrefix = getFileNamePrefix();
+
+        if (appData.eventTitle) csvContent += "公演タイトル," + escapeCSV(appData.eventTitle) + "\n\n";
+        csvContent += 'タブ名(シーン),記録ID,対象名,"X方向\n(上手/下手)",,X距離,,"Y方向\n(前/奥)",,Y距離,,備考,\n';
+
+        for (var t = 0; t < appData.tabs.length; t++) {
+            var tab = appData.tabs[t];
+            var baseId = "base-" + tab.id;
+            var basePhotoName = "";
+            if (window.appPhotos[baseId]) {
+                basePhotoName = sanitizeFileName(tab.name + "_基準点.jpg");
+                zip.file(basePhotoName, window.appPhotos[baseId].split(",")[1], { base64: true });
+            }
+            var baseNote = tab.basePointDesc || "";
+            var baseRow = [
+                tab.name,
+                tab.usePosition ? "📍基準点" : "位置情報未使用",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                basePhotoName ? (baseNote + (baseNote ? " " : "") + "(写真: " + basePhotoName + ")") : baseNote
+            ];
+            csvContent += baseRow.map(escapeCSV).join(",") + "\n";
+
+            for (var c = 0; c < tab.cards.length; c++) {
+                var card = tab.cards[c];
+                var finalId = makeRecordId(card);
+                var safeId = sanitizeFileName(finalId) || ("未設定_" + card.id);
+
+                var photoNames = [];
+                if (Array.isArray(card.photos)) {
+                    for (var p = 0; p < card.photos.length; p++) {
+                        var photoMeta = card.photos[p];
+                        var data = window.appPhotos[photoMeta.id] || await loadPhotoFromStore(photoMeta.id);
+                        if (!data) continue;
+                        var photoFileName = sanitizeFileName(tab.name + "_" + safeId + "_" + (p + 1) + ".jpg");
+                        zip.file(photoFileName, data.split(",")[1], { base64: true });
+                        photoNames.push(photoFileName);
+                    }
+                }
+
+                var outDirX = (tab.usePosition && card.hasPosition) ? card.dirX : "";
+                var outDirY = (tab.usePosition && card.hasPosition) ? card.dirY : "";
+                var outDistX = (tab.usePosition && card.hasPosition && card.dirX !== "センター") ? card.distX : "";
+                var outDistY = (tab.usePosition && card.hasPosition) ? card.distY : "";
+                var outHeX = (tab.usePosition && card.hasPosition && card.dirX !== "センター") ? "へ" : "";
+                var outMmX = (tab.usePosition && card.hasPosition && card.dirX !== "センター") ? "mm" : "";
+                var outHeY = (tab.usePosition && card.hasPosition) ? "へ" : "";
+                var outMmY = (tab.usePosition && card.hasPosition) ? "mm" : "";
+                var note = card.note || "";
+                if (photoNames.length) note += (note ? " " : "") + "(写真: " + photoNames.join(" / ") + ")";
+
+                var row = [tab.name, finalId, card.name, outDirX, outHeX, outDistX, outMmX, outDirY, outHeY, outDistY, outMmY, note];
+                csvContent += row.map(escapeCSV).join(",") + "\n";
+            }
+        }
+
+        zip.file(fileNamePrefix + "_全リスト.csv", csvContent);
+        var content = await zip.generateAsync({ type: "blob" });
+        var url = URL.createObjectURL(content);
+        var link = document.createElement("a");
+        link.href = url;
+        link.download = fileNamePrefix + ".zip";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    } catch (error) {
+        console.error(error);
+        alert("保存中にエラーが発生しました。\n" + error.message);
+    } finally {
+        overlay.style.display = "none";
+    }
+}
+
+function executeCADExport() {
+    closeCADModal();
+    syncDOMtoData();
+
+    var incTab = document.getElementById("cad-chk-tab").checked;
+    var incTitle = document.getElementById("cad-chk-title").checked;
+    var incId = document.getElementById("cad-chk-id").checked;
+    var incName = document.getElementById("cad-chk-name").checked;
+    var incNote = document.getElementById("cad-chk-note").checked;
+    var eventTitle = sanitizeCADText(appData.eventTitle);
+
+    var vsContent = "PROCEDURE ImportStageLinkMemo;\nBEGIN\n";
+
+    appData.tabs.forEach(function (tab) {
+        var safeTabName = sanitizeCADText(tab.name);
+        tab.cards.forEach(function (card) {
+            var finalId = makeRecordId(card);
+            var x = 0;
+            if (tab.usePosition && card.hasPosition) {
+                if (card.dirX === "上手") x = Number(card.distX) || 0;
+                else if (card.dirX === "下手") x = -(Number(card.distX) || 0);
+            }
+            var y = 0;
+            if (tab.usePosition && card.hasPosition) {
+                if (card.dirY === "奥") y = Number(card.distY) || 0;
+                else if (card.dirY === "前") y = -(Number(card.distY) || 0);
+            }
+
+            var safeName = sanitizeCADText(card.name || "");
+            var safeId = sanitizeCADText(finalId);
+            var safeNote = sanitizeCADText(card.note || "");
+
+            var labelParts = [];
+            if (incTab && safeTabName) labelParts.push(safeTabName);
+            if (incTitle && eventTitle) labelParts.push(eventTitle);
+            if (incId && safeId) labelParts.push(safeId);
+            if (incName && safeName) labelParts.push(safeName);
+            if (incNote && safeNote) labelParts.push(safeNote);
+
+            var labelText = labelParts.join(" : ");
+            vsContent += "  Locus(" + x + ", " + y + ");\n";
+            if (labelText) {
+                vsContent += "  TextOrigin(" + (x + 100) + ", " + (y + 100) + ");\n  CreateText('" + labelText + "');\n";
+            }
+        });
+    });
+
+    vsContent += "END;\nRun(ImportStageLinkMemo);\n";
+
+    var blob = new Blob([vsContent], { type: "text/plain;charset=utf-8;" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = getFileNamePrefix() + "_VWスクリプト.txt";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+}
+
+function exportPDF() {
+    syncDOMtoData();
+    var originalTitle = document.title;
+    document.title = getFileNamePrefix();
+    window.print();
+    setTimeout(function () { document.title = originalTitle; }, 1000);
+}
+
+function openImageModal(imgSrc) {
+    document.getElementById("modal-img").src = imgSrc;
+    document.getElementById("image-modal").style.display = "flex";
+}
+function closeImageModal() {
+    document.getElementById("image-modal").style.display = "none";
+    document.getElementById("modal-img").src = "";
+}
+function openCADModal() { document.getElementById("cad-modal").style.display = "flex"; }
+function closeCADModal() { document.getElementById("cad-modal").style.display = "none"; }
+
+async function loadData() {
+    try {
+        var saved = localStorage.getItem(SAVE_KEY);
         if (!saved) {
-            for (const key of LEGACY_SAVE_KEYS) {
-                const oldSaved = localStorage.getItem(key);
+            for (var i = 0; i < LEGACY_SAVE_KEYS.length; i++) {
+                var oldSaved = localStorage.getItem(LEGACY_SAVE_KEYS[i]);
                 if (!oldSaved) continue;
                 try {
                     appData = normalizeAppData(JSON.parse(oldSaved));
                     break;
-                } catch(e) {}
-            }
-            if (!appData.activeTabId) {
-                appData = normalizeAppData(appData);
+                } catch (e) {}
             }
         } else {
             appData = normalizeAppData(JSON.parse(saved));
         }
 
-        document.getElementById('event-title').value = appData.eventTitle || '';
+        if (!appData.activeTabId && appData.tabs[0]) appData.activeTabId = appData.tabs[0].id;
 
-        if (typeof localforage !== 'undefined') {
+        var eventTitleEl = document.getElementById("event-title");
+        if (eventTitleEl) eventTitleEl.value = appData.eventTitle || "";
+
+        if (typeof localforage !== "undefined") {
             try {
                 await migrateLegacyPhotosIfNeeded();
                 await preloadAllPhotos();
@@ -1045,594 +1796,31 @@
         renderCards();
         updateStorageStatus();
 
-        if (isDirectLocalOpen() && !sessionStorage.getItem('stage_link_memo_warning_shown')) {
-            sessionStorage.setItem('stage_link_memo_warning_shown', '1');
-            alert('このHTMLを端末内から直接開いているため、写真保存は不安定です。\n重要な写真は作業後すぐにZIP保存してください。');
+        if (isDirectLocalOpen() && !sessionStorage.getItem("stage_link_memo_warning_shown")) {
+            sessionStorage.setItem("stage_link_memo_warning_shown", "1");
+            alert("このHTMLを端末内から直接開いているため、写真保存は不安定です。\n重要な写真は作業後すぐにZIP保存してください。");
         }
+    } catch (error) {
+        console.error(error);
+        alert("初期化でエラーが発生しました。\n" + error.message);
+        updateStorageStatus("初期化でエラーが発生しました。");
     }
+}
 
-    function createEmptyCardData(prefillType = "", prefillNum = "") {
-        return {
-            id: generateId(),
-            typeVal: prefillType,
-            numVal: prefillNum,
-            customVal: "",
-            name: "",
-            dirX: "",
-            distX: "",
-            dirY: "奥",
-            distY: "",
-            note: "",
-            isLocked: false,
-            photos: []
-        };
+async function registerServiceWorker() {
+    if (!("serviceWorker" in navigator)) return;
+    if (!(location.protocol === "https:" || location.hostname === "localhost")) return;
+    try {
+        await navigator.serviceWorker.register("./sw.js");
+    } catch (e) {
+        console.error("Service Worker registration failed:", e);
     }
-
-    function renderTabs() {
-        const tc = document.getElementById('tabs-container');
-        tc.innerHTML = '';
-        appData.tabs.forEach(tab => {
-            const btn = document.createElement('div');
-            btn.className = `tab-btn ${tab.id === appData.activeTabId ? 'active' : ''}`;
-
-            const switchSpan = document.createElement('span');
-            switchSpan.style.marginRight = '8px';
-            switchSpan.textContent = tab.name;
-            switchSpan.onclick = () => switchTab(tab.id);
-            btn.appendChild(switchSpan);
-
-            const editSpan = document.createElement('span');
-            editSpan.className = 'tab-edit-icon';
-            editSpan.title = '名前変更';
-            editSpan.textContent = '✏️';
-            editSpan.onclick = (e) => { e.stopPropagation(); editTab(tab.id); };
-            btn.appendChild(editSpan);
-
-            if (appData.tabs.length > 1) {
-                const deleteSpan = document.createElement('span');
-                deleteSpan.className = 'tab-delete-icon';
-                deleteSpan.style.color = '#d92d20';
-                deleteSpan.title = '削除';
-                deleteSpan.textContent = '✖';
-                deleteSpan.onclick = (e) => { e.stopPropagation(); deleteTab(tab.id); };
-                btn.appendChild(deleteSpan);
-            }
-
-            tc.appendChild(btn);
-        });
-
-        const addBtn = document.createElement('div');
-        addBtn.className = 'tab-add-btn';
-        addBtn.textContent = '＋ タブ追加';
-        addBtn.onclick = addTab;
-        tc.appendChild(addBtn);
-    }
-
-    function switchTab(tabId) {
-        if (appData.activeTabId === tabId) return;
-        syncDOMtoData();
-        appData.activeTabId = tabId;
-        renderTabs();
-        renderCards();
-        updateStorageStatus();
-    }
-
-    function addTab() {
-        syncDOMtoData();
-        const name = prompt("新しいタブの名前を入力してください", `シーン${appData.tabs.length + 1}`);
-        if (!name) return;
-        const newTab = { id: generateId(), name: name.trim(), usePosition: false, basePointDesc: "", cards: [] };
-        appData.tabs.push(newTab);
-        appData.activeTabId = newTab.id;
-        renderTabs();
-        renderCards();
-        saveData();
-        updateStorageStatus();
-    }
-
-    function editTab(tabId) {
-        const tab = appData.tabs.find(t => t.id === tabId);
-        const newName = prompt("タブの名前を変更", tab.name);
-        if (newName && newName.trim() !== "") {
-            tab.name = newName.trim();
-            renderTabs();
-            saveData();
-        }
-    }
-
-    async function deleteTab(tabId) {
-        if (appData.tabs.length <= 1) return;
-        const tab = appData.tabs.find(t => t.id === tabId);
-        if (!confirm(`タブ「${tab.name}」とその中のデータをすべて削除しますか？`)) return;
-
-        await removePhotoFromStore(`base-${tabId}`);
-        for (const c of tab.cards) {
-            if (Array.isArray(c.photos)) {
-                for (const p of c.photos) await removePhotoFromStore(p.id);
-            }
-            await removePhotoFromStore(c.id);
-        }
-
-        appData.tabs = appData.tabs.filter(t => t.id !== tabId);
-        if (appData.activeTabId === tabId) appData.activeTabId = appData.tabs[0].id;
-        renderTabs();
-        renderCards();
-        saveData();
-        updateStorageStatus('タブと関連写真を削除しました。');
-    }
-
-    function renderCards() {
-        const appDiv = document.getElementById('app');
-        appDiv.innerHTML = '';
-        const activeTab = getActiveTab();
-        if (!activeTab) return;
-
-        appDiv.appendChild(createBasePointElement(activeTab));
-        activeTab.cards.forEach(card => appDiv.appendChild(createCardElement(card)));
-    }
-
-    function createBasePointElement(tab) {
-        const div = document.createElement('div');
-        div.className = 'card base-point-card';
-        const baseId = `base-${tab.id}`;
-
-        div.innerHTML = `
-            <div class="card-header"><span>📍 位置情報設定（タブ専用）</span></div>
-            <div class="input-group">
-                <label class="toggle-row">
-                    <input type="checkbox" id="use-position-${tab.id}" ${tab.usePosition ? 'checked' : ''}>
-                    <span>位置情報を使う</span>
-                </label>
-                <div class="help-text">使う時だけ、0.0基準点と各記録の座標入力を表示します。</div>
-            </div>
-        `;
-
-        const toggle = div.querySelector(`#use-position-${tab.id}`);
-        toggle.onchange = () => {
-            saveData();
-            renderCards();
-        };
-
-        if (!tab.usePosition) return div;
-
-        const details = document.createElement('details');
-        details.className = 'disclosure';
-        details.open = true;
-        details.innerHTML = `
-            <summary>0.0基準点の詳細を表示</summary>
-            <div class="disclosure-body">
-                <div class="input-group">
-                    <label>0.0基準点の説明・位置</label>
-                    <input type="text" id="base-point-desc-${tab.id}" placeholder="例: 舞台センター奥の釘、など自由に記述" value="${escapeHtml(tab.basePointDesc || '')}">
-                </div>
-                <div class="input-group">
-                    <input type="file" accept="image/*" capture="environment" id="photo-${baseId}" style="display:none;">
-                    <button type="button" class="camera-btn" id="cameraBtn-${baseId}">📷 基準点の写真を選択/撮影</button>
-                    <img id="preview-${baseId}" class="photo-preview" alt="基準点の写真">
-                    <button type="button" class="photo-delete-btn" id="deletePhotoBtn-${baseId}" style="display:none;">🗑️ 写真を削除</button>
-                </div>
-            </div>
-        `;
-        div.appendChild(details);
-
-        const fileInput = details.querySelector(`#photo-${baseId}`);
-        const camBtn = details.querySelector(`#cameraBtn-${baseId}`);
-        const preview = details.querySelector(`#preview-${baseId}`);
-        const delBtn = details.querySelector(`#deletePhotoBtn-${baseId}`);
-        const descInput = details.querySelector(`#base-point-desc-${tab.id}`);
-
-        descInput.onchange = saveData;
-        fileInput.onchange = (event) => handleBasePhoto(event, baseId);
-        camBtn.onclick = () => fileInput.click();
-        preview.onclick = () => openImageModal(preview.src);
-        delBtn.onclick = () => removePhoto(baseId);
-
-        setTimeout(() => {
-            if (window.appPhotos[baseId]) {
-                preview.src = window.appPhotos[baseId];
-                preview.style.display = 'block';
-                camBtn.classList.add('has-photo');
-                camBtn.textContent = '✅ 写真撮影済み（タップで撮り直し）';
-                delBtn.style.display = 'block';
-            }
-        }, 0);
-
-        return div;
-    }
-
-    function createCardElement(card) {
-        const div = document.createElement('div');
-        div.className = `card record-card ${card.isLocked ? 'is-locked' : ''}`;
-        div.setAttribute('data-id', card.id);
-
-        let typeOptions = `<option value="">種類を選択</option>`;
-        for (const [key] of Object.entries(recordTypes)) {
-            const displayLabel = ['CM250', 'CM500', 'SL'].includes(key) ? `${escapeHtml(key)} -` : escapeHtml(key);
-            typeOptions += `<option value="${escapeHtml(key)}" ${card.typeVal === key ? 'selected' : ''}>${displayLabel}</option>`;
-        }
-        typeOptions += `<option value="custom" ${card.typeVal === 'custom' ? 'selected' : ''}>✍️ 任意入力</option>`;
-
-        let numOptions = '<option value="">番号</option>';
-        if (recordTypes[card.typeVal] && card.typeVal !== 'custom') {
-            for (let i = 1; i <= recordTypes[card.typeVal]; i++) {
-                const nStr = String(i).padStart(2, '0');
-                numOptions += `<option value="${nStr}" ${card.numVal === nStr ? 'selected' : ''}>${nStr}</option>`;
-            }
-        }
-
-        const activeTab = getActiveTab();
-        const showPosition = !!activeTab?.usePosition;
-
-        div.innerHTML = `
-            <div class="card-header">
-                <div style="flex:1;">
-                    <div class="type-row">
-                        <select id="typeSelect-${card.id}" onchange="handleTypeChange('${card.id}')" ${card.isLocked ? 'disabled' : ''}>${typeOptions}</select>
-                        <select id="numSelect-${card.id}" style="display:${card.typeVal === 'custom' ? 'none' : 'block'}" onchange="saveData()" ${card.isLocked ? 'disabled' : ''}>${numOptions}</select>
-                    </div>
-                    <div style="margin-top:8px;">
-                        <input type="text" id="recordCustom-${card.id}" style="display:${card.typeVal === 'custom' ? 'block' : 'none'};" placeholder="任意の記録ID" value="${escapeHtml(card.customVal || '')}" onchange="saveData()" ${card.isLocked ? 'disabled' : ''}>
-                    </div>
-                </div>
-                <div class="header-actions">
-                    <button type="button" class="lock-btn ${card.isLocked ? 'locked-state' : ''}" onclick="toggleLock('${card.id}')">${card.isLocked ? '🔒 解除' : '🔓 ロック'}</button>
-                    <button type="button" class="delete-btn" onclick="removeCard('${card.id}')" ${card.isLocked ? 'disabled' : ''}>削除</button>
-                </div>
-            </div>
-
-            <div class="input-group">
-                <label>対象名</label>
-                <input type="text" id="name-${card.id}" placeholder="対象名を入力" value="${escapeHtml(card.name || '')}" onchange="saveData()" ${card.isLocked ? 'disabled' : ''}>
-            </div>
-
-            ${showPosition ? `
-            <details class="disclosure">
-                <summary>位置情報を入力する</summary>
-                <div class="disclosure-body">
-                    <div class="input-group">
-                        <label>X距離（基本は舞台のセンターから）</label>
-                        <div class="flex-row">
-                            <select id="dirX-${card.id}" onchange="toggleDistX('${card.id}'); saveData();" ${card.isLocked ? 'disabled' : ''}>
-                                <option value="" ${card.dirX === '' ? 'selected' : ''}>選択</option>
-                                <option value="上手" ${card.dirX === '上手' ? 'selected' : ''}>上手</option>
-                                <option value="下手" ${card.dirX === '下手' ? 'selected' : ''}>下手</option>
-                                <option value="センター" ${card.dirX === 'センター' ? 'selected' : ''}>センター</option>
-                            </select>
-                            <span class="unit dist-x-parts-${card.id}" style="display:${card.dirX === 'センター' ? 'none' : ''}">へ</span>
-                            <input type="number" id="distX-${card.id}" class="dist-x-parts-${card.id}" style="display:${card.dirX === 'センター' ? 'none' : 'block'}" placeholder="0" value="${escapeHtml(card.distX || '')}" onchange="saveData()" ${card.isLocked ? 'disabled' : ''}>
-                            <span class="unit dist-x-parts-${card.id}" style="display:${card.dirX === 'センター' ? 'none' : ''}">mm</span>
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <label>Y距離（基本は舞台前から）</label>
-                        <div class="flex-row">
-                            <select id="dirY-${card.id}" onchange="saveData()" ${card.isLocked ? 'disabled' : ''}>
-                                <option value="奥" ${card.dirY === '奥' || card.dirY === '' ? 'selected' : ''}>奥</option>
-                                <option value="前" ${card.dirY === '前' ? 'selected' : ''}>前</option>
-                            </select>
-                            <span class="unit">へ</span>
-                            <input type="number" id="distY-${card.id}" placeholder="0" value="${escapeHtml(card.distY || '')}" onchange="saveData()" ${card.isLocked ? 'disabled' : ''}>
-                            <span class="unit">mm</span>
-                        </div>
-                    </div>
-                </div>
-            </details>
-            ` : ''}
-
-            <div class="input-group">
-                <label>備考</label>
-                <textarea id="note-${card.id}" placeholder="メモ" onchange="saveData()" ${card.isLocked ? 'disabled' : ''}>${escapeHtml(card.note || '')}</textarea>
-            </div>
-
-            <div class="input-group">
-                <label>記録写真（最大${MAX_RECORD_PHOTOS}枚）</label>
-                <input type="file" accept="image/*" capture="environment" id="photo-${card.id}" style="display:none;" ${card.isLocked ? 'disabled' : ''}>
-                <button type="button" class="camera-btn" id="cameraBtn-${card.id}" ${card.isLocked ? 'disabled' : ''}>📷 記録写真を追加</button>
-                <div class="help-text">全景・寄り・別角度などを1件にまとめて保存できます。</div>
-                <div class="photo-grid" id="photoList-${card.id}"></div>
-            </div>
-        `;
-
-        const fileInput = div.querySelector(`#photo-${card.id}`);
-        const camBtn = div.querySelector(`#cameraBtn-${card.id}`);
-        fileInput.onchange = (event) => handleRecordPhoto(event, card.id);
-        camBtn.onclick = () => fileInput.click();
-
-        setTimeout(async () => {
-            const photoList = div.querySelector(`#photoList-${card.id}`);
-            if (!photoList) return;
-            const photos = Array.isArray(card.photos) ? card.photos : [];
-            if (photos.length > 0) camBtn.classList.add('has-photo');
-
-            for (const p of photos) {
-                const data = await loadPhotoFromStore(p.id);
-                if (!data) continue;
-
-                const wrap = document.createElement('div');
-                wrap.className = 'photo-item';
-
-                const img = document.createElement('img');
-                img.src = data;
-                img.className = 'photo-preview';
-                img.style.display = 'block';
-                img.alt = '記録写真';
-                img.onclick = () => openImageModal(data);
-
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'photo-delete-btn';
-                btn.textContent = '🗑️ この写真を削除';
-                btn.disabled = card.isLocked;
-                btn.onclick = () => removeRecordPhoto(card.id, p.id);
-
-                wrap.appendChild(img);
-                wrap.appendChild(btn);
-                photoList.appendChild(wrap);
-            }
-        }, 0);
-
-        return div;
-    }
-
-    function addCard(prefillType = "", prefillNum = "") {
-        syncDOMtoData();
-        const activeTab = getActiveTab();
-        if (!activeTab) return;
-        activeTab.cards.push(createEmptyCardData(prefillType, prefillNum));
-        renderCards();
-        saveData();
-        updateStorageStatus();
-    }
-
-    function addSimilarCard() {
-        syncDOMtoData();
-        const activeTab = getActiveTab();
-        if (!activeTab || activeTab.cards.length === 0) { addCard(); return; }
-
-        const lastCard = activeTab.cards[activeTab.cards.length - 1];
-        if (!lastCard.typeVal || lastCard.typeVal === "custom") { addCard(lastCard.typeVal); return; }
-
-        let nextNumInt = 1;
-        if (lastCard.numVal) nextNumInt = parseInt(lastCard.numVal, 10) + 1;
-
-        const maxNum = recordTypes[lastCard.typeVal];
-        if (nextNumInt > maxNum) {
-            alert(`${lastCard.typeVal}は${maxNum}番までです。新しい枠のみ追加します。`);
-            addCard(lastCard.typeVal);
-        } else {
-            const nextNumStr = String(nextNumInt).padStart(2, '0');
-            addCard(lastCard.typeVal, nextNumStr);
-        }
-        setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 50);
-    }
-
-    function toggleLock(id) {
-        syncDOMtoData();
-        const card = getCardById(id);
-        if (!card) return;
-        card.isLocked = !card.isLocked;
-        renderCards();
-        saveData();
-    }
-
-    async function removeCard(id) {
-        syncDOMtoData();
-        const activeTab = getActiveTab();
-        if (!activeTab) return;
-        const card = activeTab.cards.find(c => c.id === id);
-        if (card?.photos) {
-            for (const p of card.photos) {
-                await removePhotoFromStore(p.id);
-            }
-        }
-        await removePhotoFromStore(id);
-        activeTab.cards = activeTab.cards.filter(c => c.id !== id);
-        renderCards();
-        saveData();
-        updateStorageStatus('記録と関連写真を削除しました。');
-    }
-
-    async function removePhoto(id) {
-        if (!confirm("撮影した写真を削除しますか？")) return;
-        await removePhotoFromStore(id);
-        const preview = document.getElementById(`preview-${id}`);
-        if (preview) { preview.src = ""; preview.style.display = 'none'; }
-        const deleteBtn = document.getElementById(`deletePhotoBtn-${id}`);
-        if (deleteBtn) deleteBtn.style.display = 'none';
-        const cameraBtn = document.getElementById(`cameraBtn-${id}`);
-        if (cameraBtn) {
-            cameraBtn.classList.remove('has-photo');
-            cameraBtn.textContent = '📷 基準点の写真を選択/撮影';
-        }
-        const fileInput = document.getElementById(`photo-${id}`);
-        if (fileInput) fileInput.value = "";
-        saveData();
-        updateStorageStatus('写真を削除しました。');
-    }
-
-    async function exportZIP() {
-        if (typeof JSZip === 'undefined') {
-            alert('ZIP保存に必要なライブラリの読み込みに失敗しました。');
-            return;
-        }
-        syncDOMtoData();
-        await preloadAllPhotos();
-
-        let hasAnyData = false;
-        appData.tabs.forEach(t => {
-            if (t.cards.length > 0 || t.basePointDesc || window.appPhotos[`base-${t.id}`]) hasAnyData = true;
-        });
-        if (!hasAnyData) {
-            alert("データがありません。");
-            return;
-        }
-
-        const overlay = document.getElementById('loading-overlay');
-        overlay.innerHTML = 'ZIPデータをまとめています...📦<br>しばらくお待ちください';
-        overlay.style.display = 'flex';
-
-        try {
-            const zip = new JSZip();
-            let csvContent = "\uFEFF";
-            const fileNamePrefix = getFileNamePrefix();
-
-            if (appData.eventTitle) csvContent += `公演タイトル,${escapeCSV(appData.eventTitle)}\n\n`;
-            csvContent += 'タブ名(シーン),記録ID,対象名,"X方向\n(上手/下手)",,X距離,,"Y方向\n(前/奥)",,Y距離,,備考,\n';
-
-            for (const tab of appData.tabs) {
-                const baseId = `base-${tab.id}`;
-                let basePhotoName = "";
-                if (window.appPhotos[baseId]) {
-                    basePhotoName = sanitizeFileName(`${tab.name}_基準点.jpg`);
-                    zip.file(basePhotoName, window.appPhotos[baseId].split(',')[1], { base64: true });
-                }
-                const baseNote = tab.basePointDesc || "";
-                const baseRow = [
-                    tab.name,
-                    tab.usePosition ? '📍基準点' : '位置情報未使用',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    '',
-                    basePhotoName ? `${baseNote}${baseNote ? ' ' : ''}(写真: ${basePhotoName})` : baseNote
-                ];
-                csvContent += baseRow.map(escapeCSV).join(",") + "\n";
-
-                for (const card of tab.cards) {
-                    const finalId = card.typeVal === "custom"
-                        ? card.customVal
-                        : (card.typeVal && card.numVal ? `${card.typeVal}ー${card.numVal}` : "");
-                    const safeFileNameId = sanitizeFileName(finalId) || `未設定_${card.id}`;
-
-                    const photoNames = [];
-                    if (Array.isArray(card.photos)) {
-                        for (let i = 0; i < card.photos.length; i++) {
-                            const p = card.photos[i];
-                            const data = window.appPhotos[p.id] || await loadPhotoFromStore(p.id);
-                            if (!data) continue;
-                            const photoFileName = sanitizeFileName(`${tab.name}_${safeFileNameId}_${i + 1}.jpg`);
-                            zip.file(photoFileName, data.split(',')[1], { base64: true });
-                            photoNames.push(photoFileName);
-                        }
-                    }
-
-                    let outHeX = "へ", outDistX = card.distX, outMmX = "mm";
-                    if (!tab.usePosition || card.dirX === "センター") { outHeX = ""; outDistX = ""; outMmX = ""; }
-                    const outDirX = tab.usePosition ? card.dirX : "";
-                    const outDirY = tab.usePosition ? card.dirY : "";
-                    const outDistY = tab.usePosition ? card.distY : "";
-                    const outNote = photoNames.length ? `${card.note || ''}${card.note ? ' ' : ''}(写真: ${photoNames.join(' / ')})` : (card.note || '');
-
-                    const row = [tab.name, finalId, card.name, outDirX, outHeX, outDistX, outMmX, outDirY, tab.usePosition ? "へ" : "", outDistY, tab.usePosition ? "mm" : "", outNote];
-                    csvContent += row.map(escapeCSV).join(",") + "\n";
-                }
-            }
-
-            zip.file(`${fileNamePrefix}_全リスト.csv`, csvContent);
-            const content = await zip.generateAsync({ type: "blob" });
-            const url = URL.createObjectURL(content);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = `${fileNamePrefix}.zip`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-        } catch (error) {
-            console.error(error);
-            alert("保存中にエラーが発生しました。\n" + error.message);
-        } finally {
-            overlay.style.display = 'none';
-        }
-    }
-
-    function executeCADExport() {
-        closeCADModal();
-        syncDOMtoData();
-
-        const incTab = document.getElementById('cad-chk-tab').checked;
-        const incTitle = document.getElementById('cad-chk-title').checked;
-        const incId = document.getElementById('cad-chk-id').checked;
-        const incName = document.getElementById('cad-chk-name').checked;
-        const incNote = document.getElementById('cad-chk-note').checked;
-        const eventTitle = sanitizeCADText(appData.eventTitle);
-
-        let vsContent = "PROCEDURE ImportStageLinkMemo;\nBEGIN\n";
-
-        appData.tabs.forEach(tab => {
-            const safeTabName = sanitizeCADText(tab.name);
-
-            tab.cards.forEach(card => {
-                let finalId = card.typeVal === "custom" ? card.customVal : (card.typeVal && card.numVal ? `${card.typeVal}-${card.numVal}` : "");
-                let x = 0;
-                if (tab.usePosition) {
-                    if (card.dirX === "上手") x = Number(card.distX) || 0;
-                    else if (card.dirX === "下手") x = -(Number(card.distX) || 0);
-                }
-                let y = 0;
-                if (tab.usePosition) {
-                    if (card.dirY === "奥") y = Number(card.distY) || 0;
-                    else if (card.dirY === "前") y = -(Number(card.distY) || 0);
-                }
-
-                let safeName = sanitizeCADText(card.name || "");
-                let safeId = sanitizeCADText(finalId);
-                let safeNote = sanitizeCADText(card.note || "");
-
-                const labelParts = [];
-                if (incTab && safeTabName) labelParts.push(safeTabName);
-                if (incTitle && eventTitle) labelParts.push(eventTitle);
-                if (incId && safeId) labelParts.push(safeId);
-                if (incName && safeName) labelParts.push(safeName);
-                if (incNote && safeNote) labelParts.push(safeNote);
-
-                const labelText = labelParts.join(' : ');
-
-                vsContent += `  Locus(${x}, ${y});\n`;
-                if (labelText) {
-                    vsContent += `  TextOrigin(${x + 100}, ${y + 100});\n  CreateText('${labelText}');\n`;
-                }
-            });
-        });
-
-        vsContent += "END;\nRun(ImportStageLinkMemo);\n";
-
-        const blob = new Blob([vsContent], { type: 'text/plain;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${getFileNamePrefix()}_VWスクリプト.txt`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }
-
-    function exportPDF() {
-        syncDOMtoData();
-        const originalTitle = document.title;
-        document.title = getFileNamePrefix();
-        window.print();
-        setTimeout(() => { document.title = originalTitle; }, 1000);
-    }
-
-    window.onload = loadData;
-
-    async function registerServiceWorker() {
-        if (!('serviceWorker' in navigator)) return;
-        if (!(location.protocol === 'https:' || location.hostname === 'localhost')) return;
-        try {
-            await navigator.serviceWorker.register('./sw.js');
-        } catch (e) {
-            console.error('Service Worker registration failed:', e);
-        }
-    }
-    window.addEventListener('load', registerServiceWorker);
+}
+
+window.onload = function () {
+    loadData();
+    registerServiceWorker();
+};
 </script>
 
 </body>

@@ -532,7 +532,7 @@
 <body>
 
 <header>
-    舞台リンクメモ<span class="version-text">v0.4.5</span>
+    舞台リンクメモ<span class="version-text">v0.4.6</span>
     <button class="header-reset-btn" onclick="resetData()">全消去</button>
 </header>
 
@@ -1546,15 +1546,36 @@ function saveData() {
 
 async function resetData() {
     if (!confirm("すべてのタブ、データ、写真を消去して初期状態に戻しますか？\n※取り消せません。")) return;
-    localStorage.removeItem(SAVE_KEY);
-    if (typeof localforage !== "undefined") {
-        var ids = collectPhotoIds();
-        for (var i = 0; i < ids.length; i++) await removePhotoFromStore(ids[i]);
-        for (var j = 0; j < LEGACY_PHOTO_KEYS.length; j++) {
-            try { await localforage.removeItem(LEGACY_PHOTO_KEYS[j]); } catch (e) {}
+
+    try {
+        localStorage.removeItem(SAVE_KEY);
+        if (Array.isArray(LEGACY_SAVE_KEYS)) {
+            for (var k = 0; k < LEGACY_SAVE_KEYS.length; k++) {
+                try { localStorage.removeItem(LEGACY_SAVE_KEYS[k]); } catch (e) {}
+            }
         }
+
+        if (typeof localforage !== "undefined") {
+            var ids = collectPhotoIds();
+            for (var i = 0; i < ids.length; i++) await removePhotoFromStore(ids[i]);
+            for (var j = 0; j < LEGACY_PHOTO_KEYS.length; j++) {
+                try { await localforage.removeItem(LEGACY_PHOTO_KEYS[j]); } catch (e) {}
+            }
+        }
+
+        appData = {
+            eventTitle: "",
+            tabs: [
+                { id: generateId(), name: "シーン1", usePosition: false, basePointDesc: "", cards: [createEmptyCardData()] }
+            ],
+            activeTabId: null
+        };
+        window.appPhotos = {};
+        location.reload();
+    } catch (error) {
+        console.error("全消去失敗:", error);
+        alert("全消去中にエラーが発生しました。\n" + error.message);
     }
-    location.reload();
 }
 
 function switchTab(tabId) {

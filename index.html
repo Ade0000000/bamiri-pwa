@@ -532,7 +532,7 @@
 <body>
 
 <header>
-    舞台リンクメモ<span class="version-text">v0.4.3</span>
+    舞台リンクメモ<span class="version-text">v0.4.4</span>
     <button class="header-reset-btn" onclick="resetData()">全消去</button>
 </header>
 
@@ -627,11 +627,7 @@ function createEmptyCardData(prefillType, prefillNum) {
         numVal: prefillNum || "",
         customVal: "",
         name: "",
-        hasPosition: false,
-        dirX: "",
-        distX: "",
-        dirY: "奥",
-        distY: "",
+        positions: [],
         note: "",
         isLocked: false,
         photos: []
@@ -882,7 +878,19 @@ function normalizeAppData(data) {
         if (!Array.isArray(tab.cards)) tab.cards = [];
         for (var j = 0; j < tab.cards.length; j++) {
             var card = tab.cards[j];
-            if (typeof card.hasPosition !== "boolean") card.hasPosition = false;
+            if (!Array.isArray(card.positions)) {
+                if (false /* legacy */) {
+                    card.positions = [{
+                        id: generateId(),
+                        dirX: card.dirX || "",
+                        distX: card.distX || "",
+                        dirY: card.dirY || "奥",
+                        distY: card.distY || ""
+                    }];
+                } else {
+                    card.positions = [];
+                }
+            }
             if (!Array.isArray(card.photos)) card.photos = [];
             card.photos = card.photos.filter(Boolean).map(function (p) {
                 return typeof p === "string" ? { id: p } : p;
@@ -960,11 +968,11 @@ function createBasePointElement(tab) {
     var baseId = "base-" + tab.id;
 
     div.innerHTML =
-        '<div class="card-header"><span>📍 位置情報設定（タブ専用）</span></div>' +
+        '<div class="card-header"><span>📍 バミリ位置情報設定（タブ専用）</span></div>' +
         '<div class="input-group">' +
         '<label style="display:flex;align-items:center;gap:8px;">' +
         '<input type="checkbox" id="use-position-' + tab.id + '"' + (tab.usePosition ? " checked" : "") + '>' +
-        '<span>位置情報を使う</span>' +
+        '<span>バミリ位置情報を使う</span>' +
         '</label>' +
         '<div class="help-text">使う時だけ、0.0基準点の設定と各記録の座標入力を表示します。</div>' +
         '</div>';
@@ -1056,31 +1064,39 @@ function createCardElement(card) {
     html += '<div class="input-group"><label>対象名</label><input type="text" id="name-' + card.id + '" placeholder="対象名を入力" value="' + escapeHtml(card.name || "") + '"' + (card.isLocked ? " disabled" : "") + '></div>';
 
     if (getActiveTab() && getActiveTab().usePosition) {
-        html += '<details class="disclosure"' + (card.hasPosition ? " open" : "") + '>';
-        html += '<summary>座標を追加する</summary>';
+        var positions = Array.isArray(card.positions) ? card.positions : [];
+        html += '<details class="disclosure"' + (positions.length > 0 ? " open" : "") + '>';
+        html += '<summary>バミリ座標を追加する</summary>';
         html += '<div class="disclosure-body">';
-        html += '<div class="input-group"><label style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="hasPosition-' + card.id + '"' + (card.hasPosition ? " checked" : "") + (card.isLocked ? " disabled" : "") + '><span>この記録に座標を付ける</span></label></div>';
-        if (card.hasPosition) {
+        html += '<div class="input-group"><button type="button" class="action-btn" id="addPositionBtn-' + card.id + '"' + (card.isLocked ? " disabled" : "") + '>＋ 座標を追加</button></div>';
+        if (positions.length === 0) {
+            html += '<div class="help-text">必要なときだけ座標を追加できます。</div>';
+        }
+        for (var pi = 0; pi < positions.length; pi++) {
+            var pos = positions[pi];
+            html += '<div class="photo-item" style="margin-bottom:10px;">';
+            html += '<div class="input-group"><label>座標 ' + (pi + 1) + '</label></div>';
             html += '<div class="input-group"><label>X距離（基本は舞台のセンターから）</label><div class="flex-row">';
-            html += '<select id="dirX-' + card.id + '"' + (card.isLocked ? " disabled" : "") + '>';
-            html += '<option value=""' + (card.dirX === "" ? " selected" : "") + '>選択</option>';
-            html += '<option value="上手"' + (card.dirX === "上手" ? " selected" : "") + '>上手</option>';
-            html += '<option value="下手"' + (card.dirX === "下手" ? " selected" : "") + '>下手</option>';
-            html += '<option value="センター"' + (card.dirX === "センター" ? " selected" : "") + '>センター</option>';
+            html += '<select id="dirX-' + card.id + '-' + pos.id + '"' + (card.isLocked ? " disabled" : "") + '>';
+            html += '<option value=""' + (pos.dirX === "" ? " selected" : "") + '>選択</option>';
+            html += '<option value="上手"' + (pos.dirX === "上手" ? " selected" : "") + '>上手</option>';
+            html += '<option value="下手"' + (pos.dirX === "下手" ? " selected" : "") + '>下手</option>';
+            html += '<option value="センター"' + (pos.dirX === "センター" ? " selected" : "") + '>センター</option>';
             html += '</select>';
-            html += '<span class="unit dist-x-parts-' + card.id + '" style="display:' + (card.dirX === "センター" ? "none" : "") + ';">へ</span>';
-            html += '<input type="number" id="distX-' + card.id + '" class="dist-x-parts-' + card.id + '" style="display:' + (card.dirX === "センター" ? "none" : "block") + ';" placeholder="0" value="' + escapeHtml(card.distX || "") + '"' + (card.isLocked ? " disabled" : "") + '>';
-            html += '<span class="unit dist-x-parts-' + card.id + '" style="display:' + (card.dirX === "センター" ? "none" : "") + ';">mm</span>';
+            html += '<span class="unit dist-x-parts-' + card.id + '-' + pos.id + '" style="display:' + (pos.dirX === "センター" ? "none" : "") + ';">へ</span>';
+            html += '<input type="number" id="distX-' + card.id + '-' + pos.id + '" class="dist-x-parts-' + card.id + '-' + pos.id + '" style="display:' + (pos.dirX === "センター" ? "none" : "block") + ';" placeholder="0" value="' + escapeHtml(pos.distX || "") + '"' + (card.isLocked ? " disabled" : "") + '>';
+            html += '<span class="unit dist-x-parts-' + card.id + '-' + pos.id + '" style="display:' + (pos.dirX === "センター" ? "none" : "") + ';">mm</span>';
             html += '</div></div>';
-
             html += '<div class="input-group"><label>Y距離（基本は舞台前から）</label><div class="flex-row">';
-            html += '<select id="dirY-' + card.id + '"' + (card.isLocked ? " disabled" : "") + '>';
-            html += '<option value="奥"' + ((card.dirY === "奥" || card.dirY === "") ? " selected" : "") + '>奥</option>';
-            html += '<option value="前"' + (card.dirY === "前" ? " selected" : "") + '>前</option>';
+            html += '<select id="dirY-' + card.id + '-' + pos.id + '"' + (card.isLocked ? " disabled" : "") + '>';
+            html += '<option value="奥"' + ((pos.dirY === "奥" || pos.dirY === "") ? " selected" : "") + '>奥</option>';
+            html += '<option value="前"' + (pos.dirY === "前" ? " selected" : "") + '>前</option>';
             html += '</select>';
             html += '<span class="unit">へ</span>';
-            html += '<input type="number" id="distY-' + card.id + '" placeholder="0" value="' + escapeHtml(card.distY || "") + '"' + (card.isLocked ? " disabled" : "") + '>';
+            html += '<input type="number" id="distY-' + card.id + '-' + pos.id + '" placeholder="0" value="' + escapeHtml(pos.distY || "") + '"' + (card.isLocked ? " disabled" : "") + '>';
             html += '<span class="unit">mm</span></div></div>';
+            html += '<button type="button" class="photo-delete-btn" id="removePositionBtn-' + card.id + '-' + pos.id + '"' + (card.isLocked ? " disabled" : "") + '>🗑️ この座標を削除</button>';
+            html += '</div>';
         }
         html += '</div></details>';
     }
@@ -1122,26 +1138,35 @@ function createCardElement(card) {
     if (lockBtn) lockBtn.onclick = function () { toggleLock(card.id); };
     if (deleteBtn) deleteBtn.onclick = function () { removeCard(card.id); };
 
-    var hasPos = div.querySelector("#hasPosition-" + card.id);
-    if (hasPos) {
-        hasPos.onchange = function () {
-            saveData();
-            renderCards();
-        };
+    var addPositionBtn = div.querySelector("#addPositionBtn-" + card.id);
+    if (addPositionBtn) {
+        addPositionBtn.onclick = function () { addPosition(card.id); };
     }
-    var dirX = div.querySelector("#dirX-" + card.id);
-    if (dirX) {
-        dirX.onchange = function () {
-            toggleDistX(card.id);
-            saveData();
-        };
+    var positions = Array.isArray(card.positions) ? card.positions : [];
+    for (var pi = 0; pi < positions.length; pi++) {
+        var pos = positions[pi];
+        var dirX = div.querySelector("#dirX-" + card.id + "-" + pos.id);
+        if (dirX) {
+            dirX.onchange = (function (recordId, positionId) {
+                return function () {
+                    toggleDistX(recordId + "-" + positionId);
+                    saveData();
+                };
+            })(card.id, pos.id);
+        }
+        var dirY = div.querySelector("#dirY-" + card.id + "-" + pos.id);
+        if (dirY) dirY.onchange = saveData;
+        var distX = div.querySelector("#distX-" + card.id + "-" + pos.id);
+        if (distX) distX.onchange = saveData;
+        var distY = div.querySelector("#distY-" + card.id + "-" + pos.id);
+        if (distY) distY.onchange = saveData;
+        var removePositionBtn = div.querySelector("#removePositionBtn-" + card.id + "-" + pos.id);
+        if (removePositionBtn) {
+            removePositionBtn.onclick = (function (recordId, positionId) {
+                return function () { removePosition(recordId, positionId); };
+            })(card.id, pos.id);
+        }
     }
-    var dirY = div.querySelector("#dirY-" + card.id);
-    if (dirY) dirY.onchange = saveData;
-    var distX = div.querySelector("#distX-" + card.id);
-    if (distX) distX.onchange = saveData;
-    var distY = div.querySelector("#distY-" + card.id);
-    if (distY) distY.onchange = saveData;
 
     setTimeout(async function () {
         var photoList = div.querySelector("#photoList-" + card.id);
@@ -1194,6 +1219,7 @@ function renderCards() {
     for (var i = 0; i < activeTab.cards.length; i++) {
         appDiv.appendChild(createCardElement(activeTab.cards[i]));
     }
+    setTimeout(function () { refreshAllUniqueNumberOptions(); }, 0);
 }
 
 function handleTypeChange(id) {
@@ -1210,17 +1236,13 @@ function handleTypeChange(id) {
     } else {
         customInput.style.display = "none";
         if (selectedType && RECORD_TYPES[selectedType]) {
-            var numOptions = '<option value="">番号</option>';
-            for (var i = 1; i <= RECORD_TYPES[selectedType]; i++) {
-                var nStr = String(i).padStart(2, "0");
-                numOptions += '<option value="' + nStr + '">' + nStr + "</option>";
-            }
-            numSelect.innerHTML = numOptions;
+            numSelect.innerHTML = '<option value="">番号</option>';
             numSelect.style.display = "block";
         } else {
             numSelect.innerHTML = '<option value="">番号</option>';
             numSelect.style.display = "block";
         }
+        setTimeout(function () { enforceUniqueNumberOptions(id); }, 0);
         customInput.value = "";
     }
     saveData();
@@ -1238,6 +1260,31 @@ function toggleDistX(id) {
         var distInput = document.getElementById("distX-" + id);
         if (distInput) distInput.value = "";
     }
+}
+
+function addPosition(cardId) {
+    syncDOMtoData();
+    var card = findCardById(cardId);
+    if (!card) return;
+    if (!Array.isArray(card.positions)) card.positions = [];
+    card.positions.push({
+        id: generateId(),
+        dirX: "",
+        distX: "",
+        dirY: "奥",
+        distY: ""
+    });
+    renderCards();
+    saveData();
+}
+
+function removePosition(cardId, positionId) {
+    syncDOMtoData();
+    var card = findCardById(cardId);
+    if (!card || !Array.isArray(card.positions)) return;
+    card.positions = card.positions.filter(function (p) { return p.id !== positionId; });
+    renderCards();
+    saveData();
 }
 
 function fileToDataURL(file) {
@@ -1415,11 +1462,6 @@ function syncDOMtoData() {
         var numSel = document.getElementById("numSelect-" + id);
         var customInput = document.getElementById("recordCustom-" + id);
         var nameInput = document.getElementById("name-" + id);
-        var hasPositionEl = document.getElementById("hasPosition-" + id);
-        var dirXSel = document.getElementById("dirX-" + id);
-        var distXInput = document.getElementById("distX-" + id);
-        var dirYSel = document.getElementById("dirY-" + id);
-        var distYInput = document.getElementById("distY-" + id);
         var noteInput = document.getElementById("note-" + id);
 
         if (typeSel) {
@@ -1429,11 +1471,21 @@ function syncDOMtoData() {
                 numVal: numSel ? numSel.value : "",
                 customVal: customInput ? customInput.value : "",
                 name: nameInput ? nameInput.value : "",
-                hasPosition: hasPositionEl ? hasPositionEl.checked : false,
-                dirX: dirXSel ? dirXSel.value : "",
-                distX: distXInput ? distXInput.value : "",
-                dirY: dirYSel ? dirYSel.value : "奥",
-                distY: distYInput ? distYInput.value : "",
+                positions: (function () {
+                    var positions = Array.isArray(prev.positions) ? prev.positions.map(function (p) { return { id: p.id, dirX: "", distX: "", dirY: "奥", distY: "" }; }) : [];
+                    for (var pi = 0; pi < positions.length; pi++) {
+                        var pos = positions[pi];
+                        var dirXEl = document.getElementById("dirX-" + id + "-" + pos.id);
+                        var distXEl = document.getElementById("distX-" + id + "-" + pos.id);
+                        var dirYEl = document.getElementById("dirY-" + id + "-" + pos.id);
+                        var distYEl = document.getElementById("distY-" + id + "-" + pos.id);
+                        pos.dirX = dirXEl ? dirXEl.value : "";
+                        pos.distX = distXEl ? distXEl.value : "";
+                        pos.dirY = dirYEl ? dirYEl.value : "奥";
+                        pos.distY = distYEl ? distYEl.value : "";
+                    }
+                    return positions;
+                })(),
                 note: noteInput ? noteInput.value : "",
                 isLocked: el.classList.contains("is-locked"),
                 photos: Array.isArray(prev.photos) ? prev.photos : []
@@ -1443,9 +1495,53 @@ function syncDOMtoData() {
     activeTab.cards = updatedCards;
 }
 
+
+function collectUsedNumbers(typeVal, excludeCardId) {
+    var tab = getActiveTab();
+    var used = {};
+    if (!tab) return used;
+    for (var i = 0; i < tab.cards.length; i++) {
+        var card = tab.cards[i];
+        if (card.id === excludeCardId) continue;
+        if (card.typeVal === typeVal && card.numVal) used[card.numVal] = true;
+    }
+    return used;
+}
+
+function enforceUniqueNumberOptions(cardId) {
+    var typeSel = document.getElementById("typeSelect-" + cardId);
+    var numSel = document.getElementById("numSelect-" + cardId);
+    if (!typeSel || !numSel) return;
+    var selectedType = typeSel.value;
+    if (!selectedType || selectedType === "custom" || !RECORD_TYPES[selectedType]) return;
+
+    var currentValue = numSel.value;
+    var used = collectUsedNumbers(selectedType, cardId);
+    var maxNum = RECORD_TYPES[selectedType];
+    var options = '<option value="">番号</option>';
+    for (var i = 1; i <= maxNum; i++) {
+        var nStr = String(i).padStart(2, "0");
+        var disabled = used[nStr] && nStr !== currentValue;
+        options += '<option value="' + nStr + '"' + (nStr === currentValue ? ' selected' : '') + (disabled ? ' disabled' : '') + '>' + nStr + (disabled ? '（使用中）' : '') + '</option>';
+    }
+    numSel.innerHTML = options;
+    if (currentValue && used[currentValue] && currentValue !== numSel.value) {
+        numSel.value = "";
+    }
+}
+
+function refreshAllUniqueNumberOptions() {
+    var tab = getActiveTab();
+    if (!tab) return;
+    for (var i = 0; i < tab.cards.length; i++) {
+        enforceUniqueNumberOptions(tab.cards[i].id);
+    }
+}
+
 function saveData() {
     syncDOMtoData();
     localStorage.setItem(SAVE_KEY, JSON.stringify(appData));
+    refreshAllUniqueNumberOptions();
 }
 
 async function resetData() {
@@ -1644,19 +1740,25 @@ async function exportZIP() {
                     }
                 }
 
-                var outDirX = (tab.usePosition && card.hasPosition) ? card.dirX : "";
-                var outDirY = (tab.usePosition && card.hasPosition) ? card.dirY : "";
-                var outDistX = (tab.usePosition && card.hasPosition && card.dirX !== "センター") ? card.distX : "";
-                var outDistY = (tab.usePosition && card.hasPosition) ? card.distY : "";
-                var outHeX = (tab.usePosition && card.hasPosition && card.dirX !== "センター") ? "へ" : "";
-                var outMmX = (tab.usePosition && card.hasPosition && card.dirX !== "センター") ? "mm" : "";
-                var outHeY = (tab.usePosition && card.hasPosition) ? "へ" : "";
-                var outMmY = (tab.usePosition && card.hasPosition) ? "mm" : "";
-                var note = card.note || "";
-                if (photoNames.length) note += (note ? " " : "") + "(写真: " + photoNames.join(" / ") + ")";
+                var positions = Array.isArray(card.positions) ? card.positions : [];
+                if (!tab.usePosition || positions.length === 0) positions = [null];
 
-                var row = [tab.name, finalId, card.name, outDirX, outHeX, outDistX, outMmX, outDirY, outHeY, outDistY, outMmY, note];
-                csvContent += row.map(escapeCSV).join(",") + "\n";
+                for (var rp = 0; rp < positions.length; rp++) {
+                    var pos = positions[rp];
+                    var outDirX = (tab.usePosition && pos) ? pos.dirX : "";
+                    var outDirY = (tab.usePosition && pos) ? pos.dirY : "";
+                    var outDistX = (tab.usePosition && pos && pos.dirX !== "センター") ? pos.distX : "";
+                    var outDistY = (tab.usePosition && pos) ? pos.distY : "";
+                    var outHeX = (tab.usePosition && pos && pos.dirX !== "センター") ? "へ" : "";
+                    var outMmX = (tab.usePosition && pos && pos.dirX !== "センター") ? "mm" : "";
+                    var outHeY = (tab.usePosition && pos) ? "へ" : "";
+                    var outMmY = (tab.usePosition && pos) ? "mm" : "";
+                    var note = card.note || "";
+                    if (positions.length > 1 && pos) note += (note ? " " : "") + "[座標" + (rp + 1) + "]";
+                    if (photoNames.length) note += (note ? " " : "") + "(写真: " + photoNames.join(" / ") + ")";
+                    var row = [tab.name, finalId, card.name, outDirX, outHeX, outDistX, outMmX, outDirY, outHeY, outDistY, outMmY, note];
+                    csvContent += row.map(escapeCSV).join(",") + "\n";
+                }
             }
         }
 
@@ -1695,33 +1797,37 @@ function executeCADExport() {
         var safeTabName = sanitizeCADText(tab.name);
         tab.cards.forEach(function (card) {
             var finalId = makeRecordId(card);
-            var x = 0;
-            if (tab.usePosition && card.hasPosition) {
-                if (card.dirX === "上手") x = Number(card.distX) || 0;
-                else if (card.dirX === "下手") x = -(Number(card.distX) || 0);
-            }
-            var y = 0;
-            if (tab.usePosition && card.hasPosition) {
-                if (card.dirY === "奥") y = Number(card.distY) || 0;
-                else if (card.dirY === "前") y = -(Number(card.distY) || 0);
-            }
-
             var safeName = sanitizeCADText(card.name || "");
             var safeId = sanitizeCADText(finalId);
             var safeNote = sanitizeCADText(card.note || "");
+            var positions = Array.isArray(card.positions) && card.positions.length ? card.positions : [null];
 
-            var labelParts = [];
-            if (incTab && safeTabName) labelParts.push(safeTabName);
-            if (incTitle && eventTitle) labelParts.push(eventTitle);
-            if (incId && safeId) labelParts.push(safeId);
-            if (incName && safeName) labelParts.push(safeName);
-            if (incNote && safeNote) labelParts.push(safeNote);
+            positions.forEach(function (pos, idx) {
+                var x = 0;
+                if (tab.usePosition && pos) {
+                    if (pos.dirX === "上手") x = Number(pos.distX) || 0;
+                    else if (pos.dirX === "下手") x = -(Number(pos.distX) || 0);
+                }
+                var y = 0;
+                if (tab.usePosition && pos) {
+                    if (pos.dirY === "奥") y = Number(pos.distY) || 0;
+                    else if (pos.dirY === "前") y = -(Number(pos.distY) || 0);
+                }
 
-            var labelText = labelParts.join(" : ");
-            vsContent += "  Locus(" + x + ", " + y + ");\n";
-            if (labelText) {
-                vsContent += "  TextOrigin(" + (x + 100) + ", " + (y + 100) + ");\n  CreateText('" + labelText + "');\n";
-            }
+                var labelParts = [];
+                if (incTab && safeTabName) labelParts.push(safeTabName);
+                if (incTitle && eventTitle) labelParts.push(eventTitle);
+                if (incId && safeId) labelParts.push(safeId);
+                if (incName && safeName) labelParts.push(safeName);
+                if (incNote && safeNote) labelParts.push(safeNote);
+                if (pos && positions.length > 1) labelParts.push("座標" + (idx + 1));
+
+                var labelText = labelParts.join(" : ");
+                vsContent += "  Locus(" + x + ", " + y + ");\n";
+                if (labelText) {
+                    vsContent += "  TextOrigin(" + (x + 100) + ", " + (y + 100) + ");\n  CreateText('" + labelText + "');\n";
+                }
+            });
         });
     });
 

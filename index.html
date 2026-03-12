@@ -532,7 +532,7 @@
 <body>
 
 <header>
-    舞台リンクメモ<span class="version-text">v0.4.4</span>
+    舞台リンクメモ<span class="version-text">v0.4.5</span>
     <button class="header-reset-btn" onclick="resetData()">全消去</button>
 </header>
 
@@ -1734,7 +1734,7 @@ async function exportZIP() {
                         var photoMeta = card.photos[p];
                         var data = window.appPhotos[photoMeta.id] || await loadPhotoFromStore(photoMeta.id);
                         if (!data) continue;
-                        var photoFileName = sanitizeFileName(tab.name + "_" + safeId + "_" + (p + 1) + ".jpg");
+                        var photoFileName = sanitizeFileName(finalId + "_" + (p + 1) + ".jpg");
                         zip.file(photoFileName, data.split(",")[1], { base64: true });
                         photoNames.push(photoFileName);
                     }
@@ -1847,7 +1847,7 @@ function executeCADExport() {
 function exportPDF() {
     syncDOMtoData();
     var originalTitle = document.title;
-    document.title = getFileNamePrefix();
+    document.title = getFileNamePrefix() + "_舞台リンクメモ";
     window.print();
     setTimeout(function () { document.title = originalTitle; }, 1000);
 }

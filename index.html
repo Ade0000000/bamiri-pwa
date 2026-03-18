@@ -532,7 +532,7 @@
 <body>
 
 <header>
-    舞台リンクメモ<span class="version-text">v0.4.6</span>
+    舞台リンクメモ<span class="version-text">v0.4.7</span>
     <button class="header-reset-btn" onclick="resetData()">全消去</button>
 </header>
 
@@ -590,6 +590,29 @@
         </div>
     </div>
 </div>
+
+
+<script>
+if (!window.localforage) {
+    window.localforage = {
+        async getItem(key) {
+            try {
+                const v = localStorage.getItem(key);
+                return v === null ? null : v;
+            } catch (e) {
+                return null;
+            }
+        },
+        async setItem(key, value) {
+            localStorage.setItem(key, value);
+            return value;
+        },
+        async removeItem(key) {
+            localStorage.removeItem(key);
+        }
+    };
+}
+</script>
 
 <script>
 const RECORD_TYPES = {
@@ -803,7 +826,7 @@ function updateStorageStatus(extraMessage) {
         messages.push("このHTMLを端末内から直接開いています。写真保存は不安定な場合がありますが、写真撮影自体は続けて試せます。");
         level = "warn";
     } else {
-        messages.push("HTTPSで開いていればホーム画面追加やオフライン起動が使いやすくなります。");
+        messages.push("HTTPSで開いていればホーム画面追加やオフライン起動が使いやすくなります。初回は通信ありで一度開いてください。");
     }
 
     messages.push("現在の写真: " + countLoadedPhotos() + "枚");
@@ -1938,7 +1961,10 @@ async function registerServiceWorker() {
     if (!("serviceWorker" in navigator)) return;
     if (!(location.protocol === "https:" || location.hostname === "localhost")) return;
     try {
-        await navigator.serviceWorker.register("./sw.js");
+        const reg = await navigator.serviceWorker.register("./sw.js");
+        if (reg && reg.update) {
+            try { await reg.update(); } catch (e) {}
+        }
     } catch (e) {
         console.error("Service Worker registration failed:", e);
     }

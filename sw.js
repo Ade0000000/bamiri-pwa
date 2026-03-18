@@ -1,10 +1,11 @@
-const CACHE_NAME = 'bamiri-pwa-v0-3-3';
+const CACHE_NAME = 'stage-link-memo-v047';
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
+  './icon-192.png',
+  './icon-512.png',
+  './sw.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js'
 ];
@@ -12,57 +13,47 @@ const APP_SHELL = [
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    try {
-      await cache.addAll(APP_SHELL);
-    } catch (e) {
-      // Cross-origin cache add may fail in some environments; cache what we can.
-      for (const url of APP_SHELL) {
-        try { await cache.add(url); } catch (_) {}
+    for (const url of APP_SHELL) {
+      try {
+        const request = new Request(url, { mode: url.startsWith('http') ? 'no-cors' : 'same-origin' });
+        const response = await fetch(request);
+        await cache.put(request, response.clone());
+      } catch (e) {
+        // Keep installing even if some files fail now.
       }
     }
-    self.skipWaiting();
+    await self.skipWaiting();
   })());
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)));
+    await Promise.all(keys.map((key) => key !== CACHE_NAME ? caches.delete(key) : Promise.resolve()));
     await self.clients.claim();
   })());
 });
 
 self.addEventListener('fetch', (event) => {
-  const request = event.request;
-  if (request.method !== 'GET') return;
-
-  if (request.mode === 'navigate') {
-    event.respondWith((async () => {
-      try {
-        const networkResponse = await fetch(request);
-        const cache = await caches.open(CACHE_NAME);
-        cache.put('./index.html', networkResponse.clone());
-        return networkResponse;
-      } catch (e) {
-        const cached = await caches.match('./index.html');
-        return cached || Response.error();
-      }
-    })());
-    return;
-  }
+  if (event.request.method !== 'GET') return;
 
   event.respondWith((async () => {
-    const cached = await caches.match(request);
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(event.request, { ignoreSearch: true });
     if (cached) return cached;
+
     try {
-      const networkResponse = await fetch(request);
-      const cache = await caches.open(CACHE_NAME);
-      if (request.url.startsWith(self.location.origin) || request.url.includes('cdnjs.cloudflare.com')) {
-        cache.put(request, networkResponse.clone());
-      }
-      return networkResponse;
+      const response = await fetch(event.request);
+      try {
+        if (event.request.url.startsWith(self.location.origin) || event.request.url.includes('cdnjs.cloudflare.com')) {
+          cache.put(event.request, response.clone());
+        }
+      } catch (e) {}
+      return response;
     } catch (e) {
-      return cached || Response.error();
+      const fallback = await cache.match('./index.html');
+      if (event.request.mode === 'navigate' && fallback) return fallback;
+      throw e;
     }
   })());
 });

@@ -480,11 +480,33 @@
             padding: 14px 16px;
             overflow: auto;
         }
+        .memo-modal-preview {
+            width: 100%;
+            min-height: 42vh;
+            border: 1px solid var(--line-strong);
+            border-radius: 10px;
+            padding: 14px;
+            background: #fff;
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            line-height: 1.8;
+        }
+        .memo-modal-preview.is-empty {
+            color: var(--muted);
+        }
         .memo-modal-textarea {
             width: 100%;
             min-height: 42vh;
             font-size: 1rem;
             line-height: 1.7;
+            display: none;
+        }
+        .memo-edit-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
         }
         .memo-modal-footer {
             padding: 14px 16px;
@@ -601,7 +623,7 @@
 <body>
 
 <header>
-    舞台リンクメモ<span class="version-text">v0.4.9</span>
+    舞台リンクメモ<span class="version-text">v0.5.0</span>
     <button class="header-reset-btn" onclick="resetData()">全消去</button>
 </header>
 
@@ -669,12 +691,17 @@
             <button type="button" class="cad-btn-cancel" onclick="closeMemoModal()">閉じる</button>
         </div>
         <div class="memo-modal-body">
+            <div id="memo-modal-preview" class="memo-modal-preview is-empty">メモは未入力です。</div>
             <textarea id="memo-modal-textarea" class="memo-modal-textarea" placeholder="メモを入力"></textarea>
-            <div class="help-text">大きく表示して読みやすく、入力しやすくしています。</div>
+            <div class="memo-edit-actions">
+                <button type="button" id="memo-edit-btn" class="cad-btn-cancel" onclick="startMemoEdit()">編集する</button>
+                <button type="button" id="memo-cancel-edit-btn" class="cad-btn-cancel" onclick="cancelMemoEdit()" style="display:none;">編集をやめる</button>
+            </div>
+            <div class="help-text">大きく表示して読みやすくしています。必要な時だけ編集に切り替わります。</div>
         </div>
         <div class="memo-modal-footer">
-            <button type="button" class="cad-btn-cancel" onclick="closeMemoModal()">キャンセル</button>
-            <button type="button" class="cad-btn-exec" onclick="saveMemoModal()">保存</button>
+            <button type="button" class="cad-btn-cancel" onclick="closeMemoModal()">閉じる</button>
+            <button type="button" id="memo-save-btn" class="cad-btn-exec" onclick="saveMemoModal()" style="display:none;">保存</button>
         </div>
     </div>
 </div>
@@ -713,10 +740,12 @@ const PHOTO_KEY_PREFIX = "stageLinkMemoPhoto_v043_";
 const LEGACY_SAVE_KEYS = ["stageLinkMemoSaveData_v041", "bamiriAppSaveData_v023", "bamiriAppSaveData_v022", "bamiriAppSaveData_v021"];
 const LEGACY_PHOTO_KEYS = ["bamiriAppPhotosDB_v023", "bamiriAppPhotosDB_v022", "bamiriAppPhotosDB_v021"];
 const MAX_RECORD_PHOTOS = 3;
-const APP_VERSION = "v0.4.9";
+const APP_VERSION = "v0.5.0";
 
 window.appPhotos = {};
 let currentMemoCardId = null;
+let currentMemoOriginalValue = "";
+let memoEditMode = false;
 let storagePersistenceGranted = null;
 let photoStoreHealth = null;
 
@@ -1108,7 +1137,7 @@ function createBasePointElement(tab) {
         '<input type="text" id="base-point-desc-' + tab.id + '" placeholder="例: 舞台センター奥の釘、など自由に記述" value="' + escapeHtml(tab.basePointDesc || "") + '">' +
         '</div>' +
         '<div class="input-group">' +
-        '<input type="file" accept="image/*" capture="environment" id="photo-' + baseId + '" style="display:none;">' +
+        '<input type="file" accept="image/*" id="photo-' + baseId + '" style="display:none;">' +
         '<button type="button" class="camera-btn" id="cameraBtn-' + baseId + '">📷 基準点の写真を選択/撮影</button>' +
         '<img id="preview-' + baseId + '" class="photo-preview" alt="基準点の写真">' +
         '<button type="button" class="photo-delete-btn" id="deletePhotoBtn-' + baseId + '" style="display:none;">🗑️ 写真を削除</button>' +
@@ -1214,17 +1243,17 @@ function createCardElement(card) {
     }
 
     html += '<div class="input-group"><label>メモ</label>' +
-            '<div class="help-text">タップすると大きく開いて、入力しやすく・読みやすくなります。</div>' +
+            '<div class="help-text">タップすると大きく読めます。必要な時だけ編集できます。</div>' +
             '<div id="notePreview-' + card.id + '" class="memo-preview' + ((card.note || '') ? '' : ' is-empty') + '">' + escapeHtml((card.note || '') || 'メモを入力') + '</div>' +
             '<textarea id="note-' + card.id + '" style="display:none;">' + escapeHtml(card.note || '') + '</textarea>' +
-            '<button type="button" class="action-btn" id="memoBtn-' + card.id + '"' + (card.isLocked ? ' disabled' : '') + ' style="margin-top:8px;">✏️ メモを大きく開く</button>' +
+            '<button type="button" class="action-btn" id="memoBtn-' + card.id + '" style="margin-top:8px;">👁️ メモを大きく表示</button>' +
             '</div>';
 
     html += '<div class="input-group">';
     html += '<label>記録写真（最大' + MAX_RECORD_PHOTOS + '枚）</label>';
-    html += '<input type="file" accept="image/*" capture="environment" id="photo-' + card.id + '" style="display:none;"' + (card.isLocked ? " disabled" : "") + '>';
+    html += '<input type="file" accept="image/*" id="photo-' + card.id + '" style="display:none;"' + (card.isLocked ? " disabled" : "") + '>';
     html += '<button type="button" class="camera-btn" id="cameraBtn-' + card.id + '"' + (card.isLocked ? " disabled" : "") + '>📷 記録写真を追加</button>';
-    html += '<div class="help-text">全景・寄り・別角度などを1件にまとめて保存できます。</div>';
+    html += '<div class="help-text">全景・寄り・別角度などを1件にまとめて保存できます。端末内の画像ファイルも選択できます。</div>';
     html += '<div class="photo-grid" id="photoList-' + card.id + '"></div>';
     html += '</div>';
 
@@ -1426,14 +1455,42 @@ function updateNotePreview(cardId) {
     }
 }
 
+function setMemoModalMode(isEdit) {
+    memoEditMode = isEdit;
+    var preview = document.getElementById("memo-modal-preview");
+    var textarea = document.getElementById("memo-modal-textarea");
+    var editBtn = document.getElementById("memo-edit-btn");
+    var cancelBtn = document.getElementById("memo-cancel-edit-btn");
+    var saveBtn = document.getElementById("memo-save-btn");
+    if (!preview || !textarea || !editBtn || !cancelBtn || !saveBtn) return;
+
+    preview.style.display = isEdit ? "none" : "block";
+    textarea.style.display = isEdit ? "block" : "none";
+    editBtn.style.display = isEdit ? "none" : "inline-block";
+    cancelBtn.style.display = isEdit ? "inline-block" : "inline-block";
+    cancelBtn.textContent = isEdit ? "編集をやめる" : "閉じる";
+    cancelBtn.onclick = isEdit ? cancelMemoEdit : closeMemoModal;
+    saveBtn.style.display = isEdit ? "inline-block" : "none";
+
+    if (isEdit) {
+        setTimeout(function () {
+            textarea.focus();
+            textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        }, 30);
+    }
+}
+
 function openMemoModal(cardId) {
     var noteInput = document.getElementById("note-" + cardId);
     var modal = document.getElementById("memo-modal");
     var textarea = document.getElementById("memo-modal-textarea");
+    var preview = document.getElementById("memo-modal-preview");
     var title = document.getElementById("memo-modal-title");
-    if (!noteInput || !modal || !textarea || !title) return;
+    if (!noteInput || !modal || !textarea || !preview || !title) return;
 
     currentMemoCardId = cardId;
+    currentMemoOriginalValue = noteInput.value || "";
+
     var recordId = "";
     var typeSel = document.getElementById("typeSelect-" + cardId);
     var numSel = document.getElementById("numSelect-" + cardId);
@@ -1444,29 +1501,67 @@ function openMemoModal(cardId) {
         recordId = typeSel.value + (numSel && numSel.value ? "ー" + numSel.value : "");
     }
     title.textContent = recordId ? "メモ（" + recordId + "）" : "メモ";
-    textarea.value = noteInput.value || "";
+
+    textarea.value = currentMemoOriginalValue;
+    if (currentMemoOriginalValue) {
+        preview.textContent = currentMemoOriginalValue;
+        preview.classList.remove("is-empty");
+    } else {
+        preview.textContent = "メモは未入力です。";
+        preview.classList.add("is-empty");
+    }
+
+    setMemoModalMode(false);
     modal.style.display = "flex";
-    setTimeout(function () {
-        textarea.focus();
-        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-    }, 50);
+}
+
+function startMemoEdit() {
+    setMemoModalMode(true);
+}
+
+function cancelMemoEdit() {
+    var textarea = document.getElementById("memo-modal-textarea");
+    var preview = document.getElementById("memo-modal-preview");
+    if (textarea) textarea.value = currentMemoOriginalValue || "";
+    if (preview) {
+        if (currentMemoOriginalValue) {
+            preview.textContent = currentMemoOriginalValue;
+            preview.classList.remove("is-empty");
+        } else {
+            preview.textContent = "メモは未入力です。";
+            preview.classList.add("is-empty");
+        }
+    }
+    setMemoModalMode(false);
 }
 
 function closeMemoModal() {
     var modal = document.getElementById("memo-modal");
     if (modal) modal.style.display = "none";
     currentMemoCardId = null;
+    currentMemoOriginalValue = "";
+    memoEditMode = false;
 }
 
 function saveMemoModal() {
     if (!currentMemoCardId) return;
     var noteInput = document.getElementById("note-" + currentMemoCardId);
     var textarea = document.getElementById("memo-modal-textarea");
-    if (!noteInput || !textarea) return;
+    var preview = document.getElementById("memo-modal-preview");
+    if (!noteInput || !textarea || !preview) return;
+
     noteInput.value = textarea.value;
+    currentMemoOriginalValue = textarea.value;
+    if (textarea.value) {
+        preview.textContent = textarea.value;
+        preview.classList.remove("is-empty");
+    } else {
+        preview.textContent = "メモは未入力です。";
+        preview.classList.add("is-empty");
+    }
     updateNotePreview(currentMemoCardId);
     saveData();
-    closeMemoModal();
+    setMemoModalMode(false);
 }
 
 function fileToDataURL(file) {

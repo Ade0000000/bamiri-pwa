@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stage-link-memo-v047';
+const CACHE_NAME = 'stage-link-memo-v049';
 const APP_SHELL = [
   './',
   './index.html',

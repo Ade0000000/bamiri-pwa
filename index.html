@@ -425,6 +425,75 @@
             border-top: 1px solid var(--line);
         }
 
+
+        .memo-preview {
+            min-height: 86px;
+            padding: 11px 12px;
+            border: 1px solid var(--line-strong);
+            border-radius: 10px;
+            background: #fff;
+            color: var(--text);
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            line-height: 1.6;
+            cursor: pointer;
+        }
+        .memo-preview.is-empty {
+            color: var(--muted);
+        }
+        .memo-modal {
+            display: none;
+            position: fixed;
+            z-index: 2100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15,23,42,0.72);
+            justify-content: center;
+            align-items: center;
+            padding: 14px;
+        }
+        .memo-modal-box {
+            width: 100%;
+            max-width: 760px;
+            max-height: 92vh;
+            background: #fff;
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            box-shadow: 0 10px 30px rgba(15,23,42,0.18);
+            display: flex;
+            flex-direction: column;
+        }
+        .memo-modal-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--line);
+            font-weight: 700;
+            color: var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .memo-modal-body {
+            padding: 14px 16px;
+            overflow: auto;
+        }
+        .memo-modal-textarea {
+            width: 100%;
+            min-height: 42vh;
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+        .memo-modal-footer {
+            padding: 14px 16px;
+            border-top: 1px solid var(--line);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
         .record-footer-actions {
             display: flex;
             gap: 10px;
@@ -532,7 +601,7 @@
 <body>
 
 <header>
-    舞台リンクメモ<span class="version-text">v0.4.7</span>
+    舞台リンクメモ<span class="version-text">v0.4.9</span>
     <button class="header-reset-btn" onclick="resetData()">全消去</button>
 </header>
 
@@ -582,7 +651,7 @@
             <label><input type="checkbox" id="cad-chk-title"> 公演タイトル</label>
             <label><input type="checkbox" id="cad-chk-id" checked> 記録ID</label>
             <label><input type="checkbox" id="cad-chk-name" checked> 対象名</label>
-            <label><input type="checkbox" id="cad-chk-note"> 備考（メモ）</label>
+            <label><input type="checkbox" id="cad-chk-note"> メモ</label>
         </div>
         <div class="cad-modal-buttons">
             <button class="cad-btn-cancel" onclick="closeCADModal()">キャンセル</button>
@@ -591,6 +660,24 @@
     </div>
 </div>
 
+
+
+<div id="memo-modal" class="memo-modal">
+    <div class="memo-modal-box">
+        <div class="memo-modal-header">
+            <span id="memo-modal-title">メモ</span>
+            <button type="button" class="cad-btn-cancel" onclick="closeMemoModal()">閉じる</button>
+        </div>
+        <div class="memo-modal-body">
+            <textarea id="memo-modal-textarea" class="memo-modal-textarea" placeholder="メモを入力"></textarea>
+            <div class="help-text">大きく表示して読みやすく、入力しやすくしています。</div>
+        </div>
+        <div class="memo-modal-footer">
+            <button type="button" class="cad-btn-cancel" onclick="closeMemoModal()">キャンセル</button>
+            <button type="button" class="cad-btn-exec" onclick="saveMemoModal()">保存</button>
+        </div>
+    </div>
+</div>
 
 <script>
 if (!window.localforage) {
@@ -626,8 +713,10 @@ const PHOTO_KEY_PREFIX = "stageLinkMemoPhoto_v043_";
 const LEGACY_SAVE_KEYS = ["stageLinkMemoSaveData_v041", "bamiriAppSaveData_v023", "bamiriAppSaveData_v022", "bamiriAppSaveData_v021"];
 const LEGACY_PHOTO_KEYS = ["bamiriAppPhotosDB_v023", "bamiriAppPhotosDB_v022", "bamiriAppPhotosDB_v021"];
 const MAX_RECORD_PHOTOS = 3;
+const APP_VERSION = "v0.4.9";
 
 window.appPhotos = {};
+let currentMemoCardId = null;
 let storagePersistenceGranted = null;
 let photoStoreHealth = null;
 
@@ -1124,7 +1213,12 @@ function createCardElement(card) {
         html += '</div></details>';
     }
 
-    html += '<div class="input-group"><label>備考</label><textarea id="note-' + card.id + '"' + (card.isLocked ? " disabled" : "") + '>' + escapeHtml(card.note || "") + '</textarea></div>';
+    html += '<div class="input-group"><label>メモ</label>' +
+            '<div class="help-text">タップすると大きく開いて、入力しやすく・読みやすくなります。</div>' +
+            '<div id="notePreview-' + card.id + '" class="memo-preview' + ((card.note || '') ? '' : ' is-empty') + '">' + escapeHtml((card.note || '') || 'メモを入力') + '</div>' +
+            '<textarea id="note-' + card.id + '" style="display:none;">' + escapeHtml(card.note || '') + '</textarea>' +
+            '<button type="button" class="action-btn" id="memoBtn-' + card.id + '"' + (card.isLocked ? ' disabled' : '') + ' style="margin-top:8px;">✏️ メモを大きく開く</button>' +
+            '</div>';
 
     html += '<div class="input-group">';
     html += '<label>記録写真（最大' + MAX_RECORD_PHOTOS + '枚）</label>';
@@ -1146,6 +1240,8 @@ function createCardElement(card) {
     var customInput = div.querySelector("#recordCustom-" + card.id);
     var nameInput = div.querySelector("#name-" + card.id);
     var noteInput = div.querySelector("#note-" + card.id);
+    var notePreview = div.querySelector("#notePreview-" + card.id);
+    var memoBtn = div.querySelector("#memoBtn-" + card.id);
     var fileInput = div.querySelector("#photo-" + card.id);
     var camBtn = div.querySelector("#cameraBtn-" + card.id);
     var lockBtn = div.querySelector("#lockBtn-" + card.id);
@@ -1155,7 +1251,12 @@ function createCardElement(card) {
     if (numSel) numSel.onchange = saveData;
     if (customInput) customInput.onchange = saveData;
     if (nameInput) nameInput.onchange = saveData;
-    if (noteInput) noteInput.onchange = saveData;
+    if (noteInput) noteInput.onchange = function () {
+        updateNotePreview(card.id);
+        saveData();
+    };
+    if (notePreview) notePreview.onclick = function () { openMemoModal(card.id); };
+    if (memoBtn) memoBtn.onclick = function () { openMemoModal(card.id); };
     if (fileInput) fileInput.onchange = function (event) { handleRecordPhoto(event, card.id); };
     if (camBtn) camBtn.onclick = function () { fileInput.click(); };
     if (lockBtn) lockBtn.onclick = function () { toggleLock(card.id); };
@@ -1308,6 +1409,64 @@ function removePosition(cardId, positionId) {
     card.positions = card.positions.filter(function (p) { return p.id !== positionId; });
     renderCards();
     saveData();
+}
+
+
+function updateNotePreview(cardId) {
+    var noteInput = document.getElementById("note-" + cardId);
+    var notePreview = document.getElementById("notePreview-" + cardId);
+    if (!noteInput || !notePreview) return;
+    var value = noteInput.value || "";
+    if (value) {
+        notePreview.textContent = value;
+        notePreview.classList.remove("is-empty");
+    } else {
+        notePreview.textContent = "メモを入力";
+        notePreview.classList.add("is-empty");
+    }
+}
+
+function openMemoModal(cardId) {
+    var noteInput = document.getElementById("note-" + cardId);
+    var modal = document.getElementById("memo-modal");
+    var textarea = document.getElementById("memo-modal-textarea");
+    var title = document.getElementById("memo-modal-title");
+    if (!noteInput || !modal || !textarea || !title) return;
+
+    currentMemoCardId = cardId;
+    var recordId = "";
+    var typeSel = document.getElementById("typeSelect-" + cardId);
+    var numSel = document.getElementById("numSelect-" + cardId);
+    var customEl = document.getElementById("recordCustom-" + cardId);
+    if (typeSel && typeSel.value === "custom") {
+        recordId = customEl ? customEl.value : "";
+    } else if (typeSel && typeSel.value) {
+        recordId = typeSel.value + (numSel && numSel.value ? "ー" + numSel.value : "");
+    }
+    title.textContent = recordId ? "メモ（" + recordId + "）" : "メモ";
+    textarea.value = noteInput.value || "";
+    modal.style.display = "flex";
+    setTimeout(function () {
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    }, 50);
+}
+
+function closeMemoModal() {
+    var modal = document.getElementById("memo-modal");
+    if (modal) modal.style.display = "none";
+    currentMemoCardId = null;
+}
+
+function saveMemoModal() {
+    if (!currentMemoCardId) return;
+    var noteInput = document.getElementById("note-" + currentMemoCardId);
+    var textarea = document.getElementById("memo-modal-textarea");
+    if (!noteInput || !textarea) return;
+    noteInput.value = textarea.value;
+    updateNotePreview(currentMemoCardId);
+    saveData();
+    closeMemoModal();
 }
 
 function fileToDataURL(file) {
@@ -1737,19 +1896,47 @@ async function exportZIP() {
     try {
         var zip = new JSZip();
         var csvContent = "\uFEFF";
+        var jsonlLines = [];
         var fileNamePrefix = getFileNamePrefix();
+        var manifest = {
+            app_name: "舞台リンクメモ",
+            app_version: APP_VERSION,
+            exported_at: new Date().toISOString(),
+            event_title: appData.eventTitle || "",
+            zip_file_name: fileNamePrefix + ".zip",
+            csv_file: "records.csv",
+            jsonl_file: "records.jsonl",
+            manifest_file: "manifest.json",
+            tab_count: appData.tabs.length,
+            record_count: 0,
+            photo_count: 0,
+            base_point_photo_count: 0,
+            tabs: []
+        };
 
         if (appData.eventTitle) csvContent += "公演タイトル," + escapeCSV(appData.eventTitle) + "\n\n";
-        csvContent += 'タブ名(シーン),記録ID,対象名,"X方向\n(上手/下手)",,X距離,,"Y方向\n(前/奥)",,Y距離,,備考,\n';
+        csvContent += 'タブ名(シーン),記録ID,対象名,"X方向\n(上手/下手)",,X距離,,"Y方向\n(前/奥)",,Y距離,,メモ,\n';
 
         for (var t = 0; t < appData.tabs.length; t++) {
             var tab = appData.tabs[t];
             var baseId = "base-" + tab.id;
-            var basePhotoName = "";
+            var basePhotoPath = "";
+
             if (window.appPhotos[baseId]) {
-                basePhotoName = sanitizeFileName(tab.name + "_基準点.jpg");
-                zip.file(basePhotoName, window.appPhotos[baseId].split(",")[1], { base64: true });
+                basePhotoPath = "photos/" + sanitizeFileName(tab.name + "_基準点.jpg");
+                zip.file(basePhotoPath, window.appPhotos[baseId].split(",")[1], { base64: true });
+                manifest.base_point_photo_count += 1;
+                manifest.photo_count += 1;
             }
+
+            manifest.tabs.push({
+                tab_id: tab.id,
+                tab_name: tab.name,
+                use_position: !!tab.usePosition,
+                base_point_description: tab.basePointDesc || "",
+                base_point_photo: basePhotoPath || null
+            });
+
             var baseNote = tab.basePointDesc || "";
             var baseRow = [
                 tab.name,
@@ -1763,24 +1950,27 @@ async function exportZIP() {
                 "",
                 "",
                 "",
-                basePhotoName ? (baseNote + (baseNote ? " " : "") + "(写真: " + basePhotoName + ")") : baseNote
+                basePhotoPath ? (baseNote + (baseNote ? " " : "") + "(写真: " + basePhotoPath + ")") : baseNote
             ];
             csvContent += baseRow.map(escapeCSV).join(",") + "\n";
 
             for (var c = 0; c < tab.cards.length; c++) {
                 var card = tab.cards[c];
                 var finalId = makeRecordId(card);
-                var safeId = sanitizeFileName(finalId) || ("未設定_" + card.id);
+                var displayId = card.typeVal === "custom"
+                    ? (card.customVal || "")
+                    : (card.typeVal && card.numVal ? card.typeVal + "ー" + card.numVal : "");
 
-                var photoNames = [];
+                var photoPaths = [];
                 if (Array.isArray(card.photos)) {
                     for (var p = 0; p < card.photos.length; p++) {
                         var photoMeta = card.photos[p];
                         var data = window.appPhotos[photoMeta.id] || await loadPhotoFromStore(photoMeta.id);
                         if (!data) continue;
-                        var photoFileName = sanitizeFileName(finalId + "_" + (p + 1) + ".jpg");
-                        zip.file(photoFileName, data.split(",")[1], { base64: true });
-                        photoNames.push(photoFileName);
+                        var photoFilePath = "photos/" + sanitizeFileName(finalId + "_" + (p + 1) + ".jpg");
+                        zip.file(photoFilePath, data.split(",")[1], { base64: true });
+                        photoPaths.push(photoFilePath);
+                        manifest.photo_count += 1;
                     }
                 }
 
@@ -1799,14 +1989,52 @@ async function exportZIP() {
                     var outMmY = (tab.usePosition && pos) ? "mm" : "";
                     var note = card.note || "";
                     if (positions.length > 1 && pos) note += (note ? " " : "") + "[座標" + (rp + 1) + "]";
-                    if (photoNames.length) note += (note ? " " : "") + "(写真: " + photoNames.join(" / ") + ")";
+                    if (photoPaths.length) note += (note ? " " : "") + "(写真: " + photoPaths.join(" / ") + ")";
                     var row = [tab.name, finalId, card.name, outDirX, outHeX, outDistX, outMmX, outDirY, outHeY, outDistY, outMmY, note];
                     csvContent += row.map(escapeCSV).join(",") + "\n";
                 }
+
+                var recordObject = {
+                    event_title: appData.eventTitle || "",
+                    tab_id: tab.id,
+                    tab_name: tab.name,
+                    use_position_tab: !!tab.usePosition,
+                    base_point: {
+                        description: tab.basePointDesc || "",
+                        photo: basePhotoPath || null
+                    },
+                    record_internal_id: card.id,
+                    record_id: finalId,
+                    display_id: displayId,
+                    item_type: card.typeVal || "",
+                    item_number: card.numVal || "",
+                    custom_id: card.customVal || "",
+                    subject_name: card.name || "",
+                    note: card.note || "",
+                    is_locked: !!card.isLocked,
+                    positions: (Array.isArray(card.positions) ? card.positions : []).map(function (pos, index) {
+                        return {
+                            index: index + 1,
+                            x_dir: pos.dirX || "",
+                            x_mm: pos.dirX === "センター" ? "" : (pos.distX || ""),
+                            y_dir: pos.dirY || "",
+                            y_mm: pos.distY || ""
+                        };
+                    }),
+                    photos: photoPaths,
+                    photo_count: photoPaths.length,
+                    source_app: "舞台リンクメモ",
+                    source_version: APP_VERSION
+                };
+                jsonlLines.push(JSON.stringify(recordObject));
+                manifest.record_count += 1;
             }
         }
 
-        zip.file(fileNamePrefix + "_全リスト.csv", csvContent);
+        zip.file("records.csv", csvContent);
+        zip.file("records.jsonl", jsonlLines.join("\n"));
+        zip.file("manifest.json", JSON.stringify(manifest, null, 2));
+
         var content = await zip.generateAsync({ type: "blob" });
         var url = URL.createObjectURL(content);
         var link = document.createElement("a");

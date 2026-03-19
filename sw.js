@@ -1,4 +1,4 @@
-const CACHE_NAME = 'stage-link-memo-v049';
+const CACHE_NAME = 'stage-link-memo-v050';
 const APP_SHELL = [
   './',
   './index.html',
@@ -18,9 +18,7 @@ self.addEventListener('install', (event) => {
         const request = new Request(url, { mode: url.startsWith('http') ? 'no-cors' : 'same-origin' });
         const response = await fetch(request);
         await cache.put(request, response.clone());
-      } catch (e) {
-        // Keep installing even if some files fail now.
-      }
+      } catch (e) {}
     }
     await self.skipWaiting();
   })());
@@ -36,12 +34,10 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
     const cached = await cache.match(event.request, { ignoreSearch: true });
     if (cached) return cached;
-
     try {
       const response = await fetch(event.request);
       try {

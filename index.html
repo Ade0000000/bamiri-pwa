@@ -623,7 +623,7 @@
 <body>
 
 <header>
-    舞台リンクメモ<span class="version-text">v0.5.0</span>
+    舞台リンクメモ<span class="version-text">v0.5.1</span>
     <button class="header-reset-btn" onclick="resetData()">全消去</button>
 </header>
 
@@ -688,7 +688,6 @@
     <div class="memo-modal-box">
         <div class="memo-modal-header">
             <span id="memo-modal-title">メモ</span>
-            <button type="button" class="cad-btn-cancel" onclick="closeMemoModal()">閉じる</button>
         </div>
         <div class="memo-modal-body">
             <div id="memo-modal-preview" class="memo-modal-preview is-empty">メモは未入力です。</div>
@@ -702,6 +701,22 @@
         <div class="memo-modal-footer">
             <button type="button" class="cad-btn-cancel" onclick="closeMemoModal()">閉じる</button>
             <button type="button" id="memo-save-btn" class="cad-btn-exec" onclick="saveMemoModal()" style="display:none;">保存</button>
+        </div>
+    </div>
+</div>
+
+<div id="photo-source-modal" class="cad-modal">
+    <div class="cad-modal-box">
+        <div class="cad-modal-title">📷 記録写真の追加</div>
+        <p class="help-text" style="font-size:0.9rem; line-height:1.6;">
+            写真を撮るか、端末内の画像を選ぶかを選んでください。
+        </p>
+        <div class="button-group" style="margin:16px 0 8px 0;">
+            <button type="button" class="add-btn btn-primary" onclick="chooseCameraPhoto()">📸 写真を撮る</button>
+            <button type="button" class="add-btn btn-secondary" onclick="chooseLibraryPhoto()">🖼️ 画像を選択する</button>
+        </div>
+        <div class="cad-modal-buttons">
+            <button class="cad-btn-cancel" onclick="closePhotoSourceModal()">キャンセル</button>
         </div>
     </div>
 </div>
@@ -740,12 +755,14 @@ const PHOTO_KEY_PREFIX = "stageLinkMemoPhoto_v043_";
 const LEGACY_SAVE_KEYS = ["stageLinkMemoSaveData_v041", "bamiriAppSaveData_v023", "bamiriAppSaveData_v022", "bamiriAppSaveData_v021"];
 const LEGACY_PHOTO_KEYS = ["bamiriAppPhotosDB_v023", "bamiriAppPhotosDB_v022", "bamiriAppPhotosDB_v021"];
 const MAX_RECORD_PHOTOS = 3;
-const APP_VERSION = "v0.5.0";
+const APP_VERSION = "v0.5.1";
 
 window.appPhotos = {};
 let currentMemoCardId = null;
 let currentMemoOriginalValue = "";
 let memoEditMode = false;
+let currentPhotoTargetId = null;
+let currentPhotoTargetKind = "record";
 let storagePersistenceGranted = null;
 let photoStoreHealth = null;
 
@@ -1252,8 +1269,9 @@ function createCardElement(card) {
     html += '<div class="input-group">';
     html += '<label>記録写真（最大' + MAX_RECORD_PHOTOS + '枚）</label>';
     html += '<input type="file" accept="image/*" id="photo-' + card.id + '" style="display:none;"' + (card.isLocked ? " disabled" : "") + '>';
+    html += '<input type="file" accept="image/*" capture="environment" id="camera-photo-' + card.id + '" style="display:none;"' + (card.isLocked ? " disabled" : "") + '>';
     html += '<button type="button" class="camera-btn" id="cameraBtn-' + card.id + '"' + (card.isLocked ? " disabled" : "") + '>📷 記録写真を追加</button>';
-    html += '<div class="help-text">全景・寄り・別角度などを1件にまとめて保存できます。端末内の画像ファイルも選択できます。</div>';
+    html += '<div class="help-text">全景・寄り・別角度などを1件にまとめて保存できます。撮影か画像選択を選べます。</div>';
     html += '<div class="photo-grid" id="photoList-' + card.id + '"></div>';
     html += '</div>';
 
@@ -1272,6 +1290,7 @@ function createCardElement(card) {
     var notePreview = div.querySelector("#notePreview-" + card.id);
     var memoBtn = div.querySelector("#memoBtn-" + card.id);
     var fileInput = div.querySelector("#photo-" + card.id);
+    var cameraInput = div.querySelector("#camera-photo-" + card.id);
     var camBtn = div.querySelector("#cameraBtn-" + card.id);
     var lockBtn = div.querySelector("#lockBtn-" + card.id);
     var deleteBtn = div.querySelector("#deleteBtn-" + card.id);
@@ -1287,7 +1306,8 @@ function createCardElement(card) {
     if (notePreview) notePreview.onclick = function () { openMemoModal(card.id); };
     if (memoBtn) memoBtn.onclick = function () { openMemoModal(card.id); };
     if (fileInput) fileInput.onchange = function (event) { handleRecordPhoto(event, card.id); };
-    if (camBtn) camBtn.onclick = function () { fileInput.click(); };
+    if (cameraInput) cameraInput.onchange = function (event) { handleRecordPhoto(event, card.id); };
+    if (camBtn) camBtn.onclick = function () { openPhotoSourceModal(card.id); };
     if (lockBtn) lockBtn.onclick = function () { toggleLock(card.id); };
     if (deleteBtn) deleteBtn.onclick = function () { removeCard(card.id); };
 
@@ -1440,6 +1460,34 @@ function removePosition(cardId, positionId) {
     saveData();
 }
 
+
+
+function openPhotoSourceModal(cardId) {
+    currentPhotoTargetId = cardId;
+    currentPhotoTargetKind = "record";
+    var modal = document.getElementById("photo-source-modal");
+    if (modal) modal.style.display = "flex";
+}
+
+function closePhotoSourceModal() {
+    var modal = document.getElementById("photo-source-modal");
+    if (modal) modal.style.display = "none";
+    currentPhotoTargetId = null;
+}
+
+function chooseCameraPhoto() {
+    if (!currentPhotoTargetId) return;
+    var input = document.getElementById("camera-photo-" + currentPhotoTargetId);
+    closePhotoSourceModal();
+    if (input) input.click();
+}
+
+function chooseLibraryPhoto() {
+    if (!currentPhotoTargetId) return;
+    var input = document.getElementById("photo-" + currentPhotoTargetId);
+    closePhotoSourceModal();
+    if (input) input.click();
+}
 
 function updateNotePreview(cardId) {
     var noteInput = document.getElementById("note-" + cardId);
